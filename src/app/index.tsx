@@ -6,7 +6,7 @@ import { ThemedView } from "@/components/themed-view";
 const HomeScreen = () => {
   return (
     <ThemedView style={styles.container}>
-      <ThemedText type="subtitle">Banking App</ThemedText>
+      <ThemedText variant="title">Banking App</ThemedText>
     </ThemedView>
   );
 };
