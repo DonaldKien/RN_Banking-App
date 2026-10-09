@@ -6,6 +6,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { IconButton } from "@/components/ui/icon-button";
 import { MaxContentWidth, Radius } from "@/constants/theme";
 import { SAMPLE_ACCOUNT } from "@/constants/sample-data";
+import { BalanceCard } from "@/features/account/balance-card";
 import { useTheme } from "@/hooks/use-theme";
 import { greeting } from "@/lib/format";
 
@@ -32,11 +33,7 @@ const HomeScreen = () => {
         </View>
 
         <View style={styles.padded}>
-          <View style={[styles.placeholder, styles.balance, { backgroundColor: theme.primary }]}>
-            <ThemedText variant="caption" color="onPrimary">
-              Available balance
-            </ThemedText>
-          </View>
+          <BalanceCard />
         </View>
 
         <View style={styles.section}>
@@ -86,10 +83,6 @@ const styles = StyleSheet.create({
   placeholder: {
     borderRadius: Radius.xl,
     minHeight: 80,
-  },
-  balance: {
-    padding: 24,
-    minHeight: 140,
   },
   list: {
     minHeight: 240,
