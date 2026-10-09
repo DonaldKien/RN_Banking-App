@@ -6,10 +6,11 @@ import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { IconButton } from "@/components/ui/icon-button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { MaxContentWidth, Radius } from "@/constants/theme";
-import { SAMPLE_ACCOUNT } from "@/constants/sample-data";
+import { MaxContentWidth } from "@/constants/theme";
+import { SAMPLE_ACCOUNT, SAMPLE_TRANSACTIONS } from "@/constants/sample-data";
 import { BalanceCard } from "@/features/account/balance-card";
+import { QuickSend } from "@/features/recipients/quick-send";
+import { TransactionRow } from "@/features/transactions/transaction-row";
 import { useTheme } from "@/hooks/use-theme";
 import { greeting } from "@/lib/format";
 
@@ -48,20 +49,14 @@ const HomeScreen = () => {
           <ThemedText variant="heading" style={styles.padded}>
             Quick send
           </ThemedText>
-          <View style={[styles.placeholder, styles.padded, { backgroundColor: theme.surfaceMuted }]} />
+          <QuickSend onSelect={() => {}} onNew={() => {}} />
         </View>
 
         <View style={[styles.section, styles.padded]}>
           <ThemedText variant="heading">Recent activity</ThemedText>
           <Card style={styles.listCard}>
-            {Array.from({ length: 4 }, (_, i) => (
-              <View key={i} style={styles.skeletonRow}>
-                <Skeleton width={40} height={40} radius={20} />
-                <View style={styles.flex}>
-                  <Skeleton width="60%" height={14} />
-                  <Skeleton width="35%" height={12} style={styles.skeletonGap} />
-                </View>
-              </View>
+            {SAMPLE_TRANSACTIONS.slice(0, 5).map((transaction) => (
+              <TransactionRow key={transaction.id} transaction={transaction} onPress={() => {}} />
             ))}
           </Card>
         </View>
@@ -105,22 +100,9 @@ const styles = StyleSheet.create({
   section: {
     gap: 12,
   },
-  placeholder: {
-    borderRadius: Radius.xl,
-    minHeight: 80,
-  },
   listCard: {
     paddingHorizontal: 0,
     paddingVertical: 4,
     overflow: "hidden",
-  },
-  skeletonRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    padding: 16,
-  },
-  skeletonGap: {
-    marginTop: 8,
   },
 });
