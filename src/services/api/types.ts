@@ -4,6 +4,12 @@
  */
 import type { Sen } from "@/lib/money";
 
+export interface Bank {
+  code: string;
+  name: string;
+  shortName: string;
+}
+
 /** How funds are routed: directly to an account number, or via a DuitNow mobile proxy. */
 export type RecipientType = "BANK_ACCOUNT" | "DUITNOW_MOBILE";
 

@@ -2,11 +2,11 @@ import { useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { ThemedText } from "@/components/themed-text";
-import { EmptyState } from "@/components/ui/empty-state";
 import { Icon } from "@/components/ui/icon";
 import { Tabs } from "@/components/ui/tabs";
 import { TextField } from "@/components/ui/text-field";
 import { Radius } from "@/constants/theme";
+import { ContactsList } from "@/features/recipients/contacts-list";
 import { SavedRecipientsList } from "@/features/recipients/saved-recipients-list";
 import { useTheme } from "@/hooks/use-theme";
 import { normaliseSearchText } from "@/lib/format";
@@ -72,7 +72,7 @@ const RecipientPickerScreen = () => {
       {source === "saved" ? (
         <SavedRecipientsList search={searchQuery} onSelect={() => {}} />
       ) : (
-        <EmptyState icon="contacts" title="Pay your contacts" message="Send money to a contact's mobile number." />
+        <ContactsList search={searchQuery} onSelect={() => {}} />
       )}
     </View>
   );
