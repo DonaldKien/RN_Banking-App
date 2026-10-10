@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import { ActivityIndicator, Linking, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { ThemedText } from "@/components/themed-text";
+import { Banner } from "@/components/ui/banner";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useTheme } from "@/hooks/use-theme";
@@ -127,9 +127,13 @@ const GrantedContactsList = ({
   if (failed) {
     return (
       <View style={styles.padded}>
-        <EmptyState icon="error" title="Couldn't read your contacts" message="Please try again.">
-          <Button title="Try again" variant="secondary" onPress={onRetry} style={styles.cta} />
-        </EmptyState>
+        <Banner
+          tone="danger"
+          title="Couldn't read your contacts"
+          message="Please try again."
+          actionLabel="Try again"
+          onAction={onRetry}
+        />
       </View>
     );
   }
@@ -144,9 +148,12 @@ const GrantedContactsList = ({
       ListHeaderComponent={
         limited ? (
           <View style={styles.padded}>
-            <ThemedText variant="caption" color="textSecondary">
-              {"You've shared only some contacts with this app. You can change this in Settings."}
-            </ThemedText>
+            <Banner
+              tone="info"
+              message="You've shared only some contacts with this app. You can change this in Settings."
+              actionLabel="Open Settings"
+              onAction={() => void Linking.openSettings()}
+            />
           </View>
         ) : null
       }
