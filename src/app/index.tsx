@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ThemedText } from "@/components/themed-text";
@@ -14,6 +14,7 @@ import { QuickSend } from "@/features/recipients/quick-send";
 import { TransactionRow } from "@/features/transactions/transaction-row";
 import { useTheme } from "@/hooks/use-theme";
 import { greeting } from "@/lib/format";
+import type { Transaction } from "@/services/api/types";
 
 const HomeScreen = () => {
   const theme = useTheme();
@@ -21,6 +22,10 @@ const HomeScreen = () => {
 
   const startTransfer = () => {
     router.push("/transfer");
+  };
+
+  const openTransaction = (transaction: Transaction) => {
+    router.push({ pathname: "/transaction/[id]", params: { id: transaction.id } });
   };
 
   return (
@@ -38,7 +43,7 @@ const HomeScreen = () => {
               <ThemedText variant="heading">{SAMPLE_ACCOUNT.holderName}</ThemedText>
             </View>
           </View>
-          <IconButton icon="tune" label="Demo controls" onPress={() => {}} />
+          <IconButton icon="tune" label="Demo controls" onPress={() => router.push("/demo-settings")} />
         </View>
 
         <View style={styles.padded}>
@@ -47,7 +52,13 @@ const HomeScreen = () => {
 
         <View style={[styles.actions, styles.padded]}>
           <Button testID="start-transfer" title="Transfer" icon="send" onPress={startTransfer} style={styles.flex} />
-          <Button title="History" icon="history" variant="secondary" onPress={() => {}} style={styles.flex} />
+          <Button
+            title="History"
+            icon="history"
+            variant="secondary"
+            onPress={() => router.push("/history")}
+            style={styles.flex}
+          />
         </View>
 
         <View style={styles.section}>
@@ -58,10 +69,17 @@ const HomeScreen = () => {
         </View>
 
         <View style={[styles.section, styles.padded]}>
-          <ThemedText variant="heading">Recent activity</ThemedText>
+          <View style={styles.sectionHeader}>
+            <ThemedText variant="heading">Recent activity</ThemedText>
+            <Pressable accessibilityRole="link" hitSlop={8} onPress={() => router.push("/history")}>
+              <ThemedText variant="captionStrong" color="primary">
+                See all
+              </ThemedText>
+            </Pressable>
+          </View>
           <Card style={styles.listCard}>
             {SAMPLE_TRANSACTIONS.slice(0, 5).map((transaction) => (
-              <TransactionRow key={transaction.id} transaction={transaction} onPress={() => {}} />
+              <TransactionRow key={transaction.id} transaction={transaction} onPress={openTransaction} />
             ))}
           </Card>
         </View>
@@ -104,6 +122,11 @@ const styles = StyleSheet.create({
   },
   section: {
     gap: 12,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   listCard: {
     paddingHorizontal: 0,

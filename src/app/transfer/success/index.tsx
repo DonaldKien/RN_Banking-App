@@ -1,5 +1,6 @@
 import { router } from "expo-router";
-import { ScrollView, Share, StyleSheet, View } from "react-native";
+import { useEffect } from "react";
+import { BackHandler, ScrollView, Share, StyleSheet, View } from "react-native";
 import Animated, { FadeInDown, ZoomIn } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -25,6 +26,15 @@ const TransferSuccessScreen = () => {
   const insets = useSafeAreaInsets();
   const transaction = SAMPLE_TRANSACTIONS[0];
   const balance = SAMPLE_ACCOUNT.balance;
+
+  // Android back from a receipt returns home rather than to the spent form.
+  useEffect(() => {
+    const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
+      goHome();
+      return true;
+    });
+    return () => subscription.remove();
+  }, []);
 
   const share = () => {
     const lines = [

@@ -1,4 +1,4 @@
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { StyleSheet, View } from "react-native";
 
 import { ThemedText } from "@/components/themed-text";
@@ -30,7 +30,7 @@ const TransactionDetailScreen = () => {
     <FormScreen
       footer={
         isCredit ? undefined : (
-          <Button title="Send again" icon="retry" onPress={() => {}} accessibilityHint="Opens a pre-filled transfer" />
+          <Button title="Send again" icon="retry" onPress={() => router.push("/transfer")} accessibilityHint="Opens a pre-filled transfer" />
         )
       }>
       <View style={styles.hero}>

@@ -1,6 +1,6 @@
-import { router } from "expo-router";
-import { useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { Stack, router } from "expo-router";
+import { useEffect, useState } from "react";
+import { BackHandler, StyleSheet, View } from "react-native";
 
 import { ThemedText } from "@/components/themed-text";
 import { Avatar } from "@/components/ui/avatar";
@@ -27,6 +27,12 @@ const ReviewTransferScreen = () => {
   const [pinVisible, setPinVisible] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  // Block Android back while the transfer is in flight.
+  useEffect(() => {
+    const subscription = BackHandler.addEventListener("hardwareBackPress", () => submitting);
+    return () => subscription.remove();
+  }, [submitting]);
+
   const confirmWithPin = async (pin: string) => {
     if (pin !== "123456") throw new Error("Incorrect PIN");
     setPinVisible(false);
@@ -36,6 +42,8 @@ const ReviewTransferScreen = () => {
 
   return (
     <View style={styles.flex}>
+      <Stack.Screen options={{ gestureEnabled: !submitting, headerBackVisible: !submitting }} />
+
       <FormScreen footer={<Button title="Confirm" icon="lock" onPress={() => setPinVisible(true)} />}>
         <View style={styles.hero}>
           <Avatar name={recipient.name} size={64} />

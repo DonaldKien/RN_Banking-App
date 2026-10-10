@@ -1,4 +1,5 @@
 import { FlashList, type ListRenderItem } from "@shopify/flash-list";
+import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -9,13 +10,17 @@ import { SAMPLE_TRANSACTIONS } from "@/constants/sample-data";
 import { ListSectionHeader } from "@/features/recipients/list-section-header";
 import { groupTransactionsByDay, type HistoryRow } from "@/features/transactions/group-by-day";
 import { TransactionRow } from "@/features/transactions/transaction-row";
-import type { TransactionFilter } from "@/services/api/types";
+import type { Transaction, TransactionFilter } from "@/services/api/types";
 
 const FILTERS = [
   { value: "all", label: "All" },
   { value: "debit", label: "Sent" },
   { value: "credit", label: "Received" },
 ] as const;
+
+const openTransaction = (transaction: Transaction) => {
+  router.push({ pathname: "/transaction/[id]", params: { id: transaction.id } });
+};
 
 /** Full transaction history, virtualised with FlashList, with sticky day headers. */
 const HistoryScreen = () => {
@@ -34,7 +39,7 @@ const HistoryScreen = () => {
     item.type === "header" ? (
       <ListSectionHeader label={item.label} />
     ) : (
-      <TransactionRow transaction={item.transaction} onPress={() => {}} />
+      <TransactionRow transaction={item.transaction} onPress={openTransaction} />
     );
 
   return (
