@@ -12,6 +12,7 @@ import { Radius } from "@/constants/theme";
 import { SAMPLE_ACCOUNT, SAMPLE_RECIPIENTS } from "@/constants/sample-data";
 import { PinSheet } from "@/features/auth/pin-sheet";
 import { describeRecipient } from "@/features/recipients/recipient-row";
+import { ProcessingOverlay } from "@/features/transfer/processing-overlay";
 import { useTheme } from "@/hooks/use-theme";
 import { maskAccountNumber } from "@/lib/format";
 import { formatMoney, ringgit } from "@/lib/money";
@@ -23,10 +24,13 @@ const ReviewTransferScreen = () => {
   const amount = ringgit(50);
   const note = "Dinner split";
   const [pinVisible, setPinVisible] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const confirmWithPin = async (pin: string) => {
     if (pin !== "123456") throw new Error("Incorrect PIN");
     setPinVisible(false);
+    setSubmitting(true);
+    setTimeout(() => setSubmitting(false), 1500);
   };
 
   return (
@@ -61,6 +65,8 @@ const ReviewTransferScreen = () => {
           </ThemedText>
         </View>
       </FormScreen>
+
+      {submitting && <ProcessingOverlay message={`Sending ${formatMoney(amount)} to ${recipient.name.split(" ")[0]}…`} />}
 
       <PinSheet
         visible={pinVisible}
