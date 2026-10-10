@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 
@@ -30,7 +31,7 @@ const ReviewTransferScreen = () => {
     if (pin !== "123456") throw new Error("Incorrect PIN");
     setPinVisible(false);
     setSubmitting(true);
-    setTimeout(() => setSubmitting(false), 1500);
+    setTimeout(() => router.replace("/transfer/success"), 1500);
   };
 
   return (

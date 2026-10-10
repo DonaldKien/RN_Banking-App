@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -17,6 +18,10 @@ import { greeting } from "@/lib/format";
 const HomeScreen = () => {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+
+  const startTransfer = () => {
+    router.push("/transfer");
+  };
 
   return (
     <ScrollView
@@ -41,7 +46,7 @@ const HomeScreen = () => {
         </View>
 
         <View style={[styles.actions, styles.padded]}>
-          <Button title="Transfer" icon="send" onPress={() => {}} style={styles.flex} />
+          <Button testID="start-transfer" title="Transfer" icon="send" onPress={startTransfer} style={styles.flex} />
           <Button title="History" icon="history" variant="secondary" onPress={() => {}} style={styles.flex} />
         </View>
 
@@ -49,7 +54,7 @@ const HomeScreen = () => {
           <ThemedText variant="heading" style={styles.padded}>
             Quick send
           </ThemedText>
-          <QuickSend onSelect={() => {}} onNew={() => {}} />
+          <QuickSend onSelect={startTransfer} onNew={startTransfer} />
         </View>
 
         <View style={[styles.section, styles.padded]}>

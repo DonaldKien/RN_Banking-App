@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import { ScrollView, Share, StyleSheet, View } from "react-native";
 import Animated, { FadeInDown, ZoomIn } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -13,6 +14,10 @@ import { describeRecipient } from "@/features/recipients/recipient-row";
 import { useTheme } from "@/hooks/use-theme";
 import { formatDateTime } from "@/lib/format";
 import { formatMoney } from "@/lib/money";
+
+const goHome = () => {
+  router.dismissTo("/");
+};
 
 /** Step 3: receipt. */
 const TransferSuccessScreen = () => {
@@ -75,9 +80,9 @@ const TransferSuccessScreen = () => {
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(500)} style={styles.actions}>
-          <Button testID="done" title="Done" onPress={() => {}} />
+          <Button testID="done" title="Done" onPress={goHome} />
           <Button title="Share receipt" icon="share" variant="secondary" onPress={share} />
-          <Button title="Make another transfer" variant="ghost" onPress={() => {}} />
+          <Button title="Make another transfer" variant="ghost" onPress={() => router.dismissTo("/transfer")} />
         </Animated.View>
       </View>
     </ScrollView>

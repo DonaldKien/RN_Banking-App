@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -15,9 +16,13 @@ const TransferFormScreen = () => {
   const amount = amountTextToSen(amountText);
   const [note, setNote] = useState("");
 
+  const review = () => {
+    router.push("/transfer/review");
+  };
+
   return (
-    <FormScreen footer={<Button title="Review transfer" onPress={() => {}} />}>
-      <RecipientField recipient={null} onPress={() => {}} />
+    <FormScreen footer={<Button testID="review-transfer" title="Review transfer" onPress={review} />}>
+      <RecipientField recipient={null} onPress={() => router.push("/transfer/recipients")} />
 
       <AmountInput
         value={amountText}
@@ -35,6 +40,7 @@ const TransferFormScreen = () => {
         showCounter
         returnKeyType="done"
         submitBehavior="blurAndSubmit"
+        onSubmitEditing={review}
       />
     </FormScreen>
   );

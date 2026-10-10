@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import { useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
@@ -10,6 +11,8 @@ import { ContactsList } from "@/features/recipients/contacts-list";
 import { SavedRecipientsList } from "@/features/recipients/saved-recipients-list";
 import { useTheme } from "@/hooks/use-theme";
 import { normaliseSearchText } from "@/lib/format";
+import { haptics } from "@/lib/haptics";
+import type { Recipient } from "@/services/api/types";
 
 type Source = "saved" | "contacts";
 
@@ -24,6 +27,11 @@ const RecipientPickerScreen = () => {
   const [source, setSource] = useState<Source>(initialSource);
   const [search, setSearch] = useState("");
   const searchQuery = normaliseSearchText(search);
+
+  const select = (_recipient: Recipient) => {
+    haptics.selection();
+    router.back();
+  };
 
   return (
     <View style={styles.flex}>
@@ -45,7 +53,7 @@ const RecipientPickerScreen = () => {
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Pay a new account or mobile number"
-          onPress={() => {}}
+          onPress={() => router.push("/transfer/new-recipient")}
           style={({ pressed }) => [
             styles.newRow,
             {
@@ -70,9 +78,9 @@ const RecipientPickerScreen = () => {
       </View>
 
       {source === "saved" ? (
-        <SavedRecipientsList search={searchQuery} onSelect={() => {}} />
+        <SavedRecipientsList search={searchQuery} onSelect={select} />
       ) : (
-        <ContactsList search={searchQuery} onSelect={() => {}} />
+        <ContactsList search={searchQuery} onSelect={select} />
       )}
     </View>
   );

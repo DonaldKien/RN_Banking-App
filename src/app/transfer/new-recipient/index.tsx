@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import { useState } from "react";
 
 import { ThemedText } from "@/components/themed-text";
@@ -45,7 +46,8 @@ const NewRecipientScreen = () => {
   const notFound = accountId !== null && accountId.endsWith("0000");
 
   return (
-    <FormScreen footer={<Button title="Continue" onPress={() => {}} />}>
+    <FormScreen
+      footer={<Button title="Continue" onPress={() => router.dismissTo("/transfer")} testID="confirm-recipient" />}>
       <Tabs options={RECIPIENT_TYPES} value={recipientType} onChange={setRecipientType} />
 
       {recipientType === "BANK_ACCOUNT" ? (
