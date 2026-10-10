@@ -7,8 +7,14 @@ import { Icon } from "@/components/ui/icon";
 import { SearchableDropdown } from "@/components/ui/searchable-dropdown";
 import { Tabs } from "@/components/ui/tabs";
 import { TextField } from "@/components/ui/text-field";
+import { AccountLookupStatus } from "@/features/recipients/account-lookup-status";
 import { useTheme } from "@/hooks/use-theme";
-import { ACCOUNT_NUMBER_MAX_LENGTH, digitsOnly } from "@/lib/identifiers";
+import {
+  ACCOUNT_NUMBER_MAX_LENGTH,
+  digitsOnly,
+  isValidAccountNumber,
+  normaliseMalaysianMobile,
+} from "@/lib/identifiers";
 import { BANKS } from "@/services/api/banks";
 import type { RecipientType } from "@/services/api/types";
 
@@ -19,6 +25,9 @@ const RECIPIENT_TYPES = [
 
 const BANK_OPTIONS = BANKS.map((bank) => ({ value: bank.code, label: bank.shortName, description: bank.name }));
 
+// Placeholder until the bank's name check is wired up.
+const PLACEHOLDER_HOLDER_NAME = "AISYAH BINTI AHMAD";
+
 /** Add a recipient by bank account or DuitNow mobile number. */
 const NewRecipientScreen = () => {
   const theme = useTheme();
@@ -26,6 +35,14 @@ const NewRecipientScreen = () => {
   const [bankCode, setBankCode] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
   const [mobile, setMobile] = useState("");
+
+  const accountId =
+    recipientType === "BANK_ACCOUNT"
+      ? bankCode && isValidAccountNumber(accountNumber)
+        ? accountNumber
+        : null
+      : normaliseMalaysianMobile(mobile);
+  const notFound = accountId !== null && accountId.endsWith("0000");
 
   return (
     <FormScreen footer={<Button title="Continue" onPress={() => {}} />}>
@@ -66,6 +83,12 @@ const NewRecipientScreen = () => {
           leading={<Icon name="phone" size={18} color={theme.textTertiary} />}
         />
       )}
+
+      <AccountLookupStatus
+        isChecking={false}
+        verifiedName={accountId && !notFound ? PLACEHOLDER_HOLDER_NAME : null}
+        error={notFound ? "Account not found. Double-check the number and the bank you selected." : null}
+      />
 
       <ThemedText variant="caption" color="textTertiary" align="center">
         Demo tip: numbers ending in 0000 simulate an unknown account.
