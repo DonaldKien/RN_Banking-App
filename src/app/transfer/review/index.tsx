@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 
 import { ThemedText } from "@/components/themed-text";
@@ -9,6 +10,7 @@ import { FormScreen } from "@/components/ui/form-screen";
 import { Icon } from "@/components/ui/icon";
 import { Radius } from "@/constants/theme";
 import { SAMPLE_ACCOUNT, SAMPLE_RECIPIENTS } from "@/constants/sample-data";
+import { PinSheet } from "@/features/auth/pin-sheet";
 import { describeRecipient } from "@/features/recipients/recipient-row";
 import { useTheme } from "@/hooks/use-theme";
 import { maskAccountNumber } from "@/lib/format";
@@ -20,38 +22,53 @@ const ReviewTransferScreen = () => {
   const recipient = SAMPLE_RECIPIENTS[0];
   const amount = ringgit(50);
   const note = "Dinner split";
+  const [pinVisible, setPinVisible] = useState(false);
+
+  const confirmWithPin = async (pin: string) => {
+    if (pin !== "123456") throw new Error("Incorrect PIN");
+    setPinVisible(false);
+  };
 
   return (
-    <FormScreen footer={<Button title="Confirm" icon="lock" onPress={() => {}} />}>
-      <View style={styles.hero}>
-        <Avatar name={recipient.name} size={64} />
-        <ThemedText variant="caption" color="textSecondary">
-          {"You're sending"}
-        </ThemedText>
-        <ThemedText variant="display" accessibilityLabel={`Amount ${formatMoney(amount)}`}>
-          {formatMoney(amount)}
-        </ThemedText>
-        <ThemedText variant="body" align="center">
-          to <ThemedText variant="bodyStrong">{recipient.name}</ThemedText>
-        </ThemedText>
-      </View>
+    <View style={styles.flex}>
+      <FormScreen footer={<Button title="Confirm" icon="lock" onPress={() => setPinVisible(true)} />}>
+        <View style={styles.hero}>
+          <Avatar name={recipient.name} size={64} />
+          <ThemedText variant="caption" color="textSecondary">
+            {"You're sending"}
+          </ThemedText>
+          <ThemedText variant="display" accessibilityLabel={`Amount ${formatMoney(amount)}`}>
+            {formatMoney(amount)}
+          </ThemedText>
+          <ThemedText variant="body" align="center">
+            to <ThemedText variant="bodyStrong">{recipient.name}</ThemedText>
+          </ThemedText>
+        </View>
 
-      <Card>
-        <DetailRow label="From" value={account.productName} secondary={maskAccountNumber(account.accountNumber)} />
-        <DetailRow label="To" value={recipient.name} secondary={describeRecipient(recipient)} />
-        <DetailRow label="Amount" value={formatMoney(amount)} />
-        <DetailRow label="Fee" value="Free" valueColor="success" />
-        <DetailRow label="Note" value={note} />
-        <DetailRow label="Balance after" value={formatMoney(account.balance - amount)} valueColor="textSecondary" />
-      </Card>
+        <Card>
+          <DetailRow label="From" value={account.productName} secondary={maskAccountNumber(account.accountNumber)} />
+          <DetailRow label="To" value={recipient.name} secondary={describeRecipient(recipient)} />
+          <DetailRow label="Amount" value={formatMoney(amount)} />
+          <DetailRow label="Fee" value="Free" valueColor="success" />
+          <DetailRow label="Note" value={note} />
+          <DetailRow label="Balance after" value={formatMoney(account.balance - amount)} valueColor="textSecondary" />
+        </Card>
 
-      <View style={[styles.security, { backgroundColor: theme.surfaceMuted }]}>
-        <Icon name="shield" size={18} color={theme.primary} />
-        <ThemedText variant="caption" color="textSecondary" style={styles.flex}>
-          {"You'll approve this transfer before any money is sent."}
-        </ThemedText>
-      </View>
-    </FormScreen>
+        <View style={[styles.security, { backgroundColor: theme.surfaceMuted }]}>
+          <Icon name="shield" size={18} color={theme.primary} />
+          <ThemedText variant="caption" color="textSecondary" style={styles.flex}>
+            {"You'll approve this transfer before any money is sent."}
+          </ThemedText>
+        </View>
+      </FormScreen>
+
+      <PinSheet
+        visible={pinVisible}
+        reason="Enter your 6-digit transaction PIN to approve this transfer."
+        onSubmit={confirmWithPin}
+        onCancel={() => setPinVisible(false)}
+      />
+    </View>
   );
 };
 
