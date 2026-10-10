@@ -26,6 +26,7 @@ export interface Recipient {
 
 export type TransactionDirection = "debit" | "credit";
 export type TransactionStatus = "completed" | "pending" | "failed";
+export type TransactionFilter = "all" | TransactionDirection;
 
 export interface Transaction {
   id: string;
