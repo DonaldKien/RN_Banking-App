@@ -4,8 +4,8 @@ import { ThemedText } from "@/components/themed-text";
 import { Avatar } from "@/components/ui/avatar";
 import { Icon } from "@/components/ui/icon";
 import { Radius } from "@/constants/theme";
+import { describeRecipient } from "@/features/recipients/recipient-row";
 import { useTheme } from "@/hooks/use-theme";
-import { maskAccountNumber } from "@/lib/format";
 import type { Recipient } from "@/services/api/types";
 
 /** Tappable summary of the chosen recipient; opens the recipient picker. */
@@ -46,7 +46,7 @@ export const RecipientField = ({
                 {recipient.name}
               </ThemedText>
               <ThemedText variant="caption" color="textSecondary" numberOfLines={1}>
-                {recipient.bankName} · {maskAccountNumber(recipient.accountId)}
+                {describeRecipient(recipient)}
               </ThemedText>
             </View>
             <ThemedText variant="captionStrong" color="primary">

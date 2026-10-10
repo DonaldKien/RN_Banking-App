@@ -7,7 +7,7 @@ import { Icon } from "@/components/ui/icon";
 import { Tabs } from "@/components/ui/tabs";
 import { TextField } from "@/components/ui/text-field";
 import { Radius } from "@/constants/theme";
-import { SAMPLE_RECIPIENTS } from "@/constants/sample-data";
+import { SavedRecipientsList } from "@/features/recipients/saved-recipients-list";
 import { useTheme } from "@/hooks/use-theme";
 import { normaliseSearchText } from "@/lib/format";
 
@@ -70,15 +70,7 @@ const RecipientPickerScreen = () => {
       </View>
 
       {source === "saved" ? (
-        <View style={styles.list}>
-          {SAMPLE_RECIPIENTS.filter((recipient) => normaliseSearchText(recipient.name).includes(searchQuery)).map(
-            (recipient) => (
-              <ThemedText key={recipient.id} variant="bodyStrong">
-                {recipient.name}
-              </ThemedText>
-            ),
-          )}
-        </View>
+        <SavedRecipientsList search={searchQuery} onSelect={() => {}} />
       ) : (
         <EmptyState icon="contacts" title="Pay your contacts" message="Send money to a contact's mobile number." />
       )}
@@ -96,10 +88,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 12,
     gap: 12,
-  },
-  list: {
-    paddingHorizontal: 16,
-    gap: 16,
   },
   newRow: {
     flexDirection: "row",
