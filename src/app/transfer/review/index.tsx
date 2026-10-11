@@ -1,4 +1,4 @@
-import { Stack, router } from "expo-router";
+import { Redirect, Stack, router } from "expo-router";
 import { useEffect, useState } from "react";
 import { BackHandler, StyleSheet, View } from "react-native";
 
@@ -10,20 +10,22 @@ import { DetailRow } from "@/components/ui/detail-row";
 import { FormScreen } from "@/components/ui/form-screen";
 import { Icon } from "@/components/ui/icon";
 import { Radius } from "@/constants/theme";
-import { SAMPLE_ACCOUNT, SAMPLE_RECIPIENTS } from "@/constants/sample-data";
+import { SAMPLE_ACCOUNT } from "@/constants/sample-data";
 import { PinSheet } from "@/features/auth/pin-sheet";
 import { describeRecipient } from "@/features/recipients/recipient-row";
 import { ProcessingOverlay } from "@/features/transfer/processing-overlay";
+import { selectAmountSen, selectNote, selectRecipient } from "@/features/transfer/transfer-slice";
 import { useTheme } from "@/hooks/use-theme";
 import { maskAccountNumber } from "@/lib/format";
-import { formatMoney, ringgit } from "@/lib/money";
+import { formatMoney } from "@/lib/money";
+import { useAppSelector } from "@/store";
 
 const ReviewTransferScreen = () => {
   const theme = useTheme();
   const account = SAMPLE_ACCOUNT;
-  const recipient = SAMPLE_RECIPIENTS[0];
-  const amount = ringgit(50);
-  const note = "Dinner split";
+  const recipient = useAppSelector(selectRecipient);
+  const amount = useAppSelector(selectAmountSen);
+  const note = useAppSelector(selectNote);
   const [pinVisible, setPinVisible] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -32,6 +34,9 @@ const ReviewTransferScreen = () => {
     const subscription = BackHandler.addEventListener("hardwareBackPress", () => submitting);
     return () => subscription.remove();
   }, [submitting]);
+
+  // e.g. opened via a deep link without a draft.
+  if (!recipient || amount === null) return <Redirect href="/transfer" />;
 
   const confirmWithPin = async (pin: string) => {
     if (pin !== "123456") throw new Error("Incorrect PIN");
@@ -63,7 +68,7 @@ const ReviewTransferScreen = () => {
           <DetailRow label="To" value={recipient.name} secondary={describeRecipient(recipient)} />
           <DetailRow label="Amount" value={formatMoney(amount)} />
           <DetailRow label="Fee" value="Free" valueColor="success" />
-          <DetailRow label="Note" value={note} />
+          {note.trim() !== "" && <DetailRow label="Note" value={note.trim()} />}
           <DetailRow label="Balance after" value={formatMoney(account.balance - amount)} valueColor="textSecondary" />
         </Card>
 

@@ -2,8 +2,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
+import { Provider as ReduxProvider } from "react-redux";
 
 import { useIsDark, useTheme } from "@/hooks/use-theme";
+import { store } from "@/store";
 
 const RootLayout = () => {
   // Created once per app instance (not at module scope) so tests and fast
@@ -11,9 +13,11 @@ const RootLayout = () => {
   const [queryClient] = useState(() => new QueryClient());
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <AppNavigator />
-    </QueryClientProvider>
+    <ReduxProvider store={store}>
+      <QueryClientProvider client={queryClient}>
+        <AppNavigator />
+      </QueryClientProvider>
+    </ReduxProvider>
   );
 };
 

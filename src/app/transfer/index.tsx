@@ -1,5 +1,4 @@
 import { router } from "expo-router";
-import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { FormScreen } from "@/components/ui/form-screen";
@@ -7,14 +6,24 @@ import { TextField } from "@/components/ui/text-field";
 import { SAMPLE_ACCOUNT } from "@/constants/sample-data";
 import { AmountInput } from "@/features/transfer/amount-input";
 import { RecipientField } from "@/features/transfer/recipient-field";
-import { amountTextToSen, sanitizeAmountInput } from "@/lib/money";
+import {
+  amountChanged,
+  noteChanged,
+  selectAmountSen,
+  selectAmountText,
+  selectNote,
+  selectRecipient,
+} from "@/features/transfer/transfer-slice";
+import { useAppDispatch, useAppSelector } from "@/store";
 
 const NOTE_MAX_LENGTH = 140;
 
 const TransferFormScreen = () => {
-  const [amountText, setAmountText] = useState("");
-  const amount = amountTextToSen(amountText);
-  const [note, setNote] = useState("");
+  const dispatch = useAppDispatch();
+  const recipient = useAppSelector(selectRecipient);
+  const amountText = useAppSelector(selectAmountText);
+  const amount = useAppSelector(selectAmountSen);
+  const note = useAppSelector(selectNote);
 
   const review = () => {
     router.push("/transfer/review");
@@ -22,11 +31,11 @@ const TransferFormScreen = () => {
 
   return (
     <FormScreen footer={<Button testID="review-transfer" title="Review transfer" onPress={review} />}>
-      <RecipientField recipient={null} onPress={() => router.push("/transfer/recipients")} />
+      <RecipientField recipient={recipient} onPress={() => router.push("/transfer/recipients")} />
 
       <AmountInput
         value={amountText}
-        onChangeText={(text) => setAmountText(sanitizeAmountInput(text))}
+        onChangeText={(text) => dispatch(amountChanged(text))}
         amount={amount}
         balance={SAMPLE_ACCOUNT.balance}
       />
@@ -35,7 +44,7 @@ const TransferFormScreen = () => {
         label="Note (optional)"
         placeholder="What's it for?"
         value={note}
-        onChangeText={setNote}
+        onChangeText={(text) => dispatch(noteChanged(text))}
         maxLength={NOTE_MAX_LENGTH}
         showCounter
         returnKeyType="done"

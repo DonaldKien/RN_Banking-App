@@ -10,17 +10,23 @@ import { IconButton } from "@/components/ui/icon-button";
 import { MaxContentWidth } from "@/constants/theme";
 import { SAMPLE_ACCOUNT, SAMPLE_TRANSACTIONS } from "@/constants/sample-data";
 import { BalanceCard } from "@/features/account/balance-card";
+import { selectBalanceHidden } from "@/features/preferences/preferences-slice";
 import { QuickSend } from "@/features/recipients/quick-send";
 import { TransactionRow } from "@/features/transactions/transaction-row";
+import { draftStarted } from "@/features/transfer/transfer-slice";
 import { useTheme } from "@/hooks/use-theme";
 import { greeting } from "@/lib/format";
-import type { Transaction } from "@/services/api/types";
+import type { Recipient, Transaction } from "@/services/api/types";
+import { useAppDispatch, useAppSelector } from "@/store";
 
 const HomeScreen = () => {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const dispatch = useAppDispatch();
+  const balanceHidden = useAppSelector(selectBalanceHidden);
 
-  const startTransfer = () => {
+  const startTransfer = (recipient?: Recipient) => {
+    dispatch(draftStarted({ recipient }));
     router.push("/transfer");
   };
 
@@ -51,7 +57,7 @@ const HomeScreen = () => {
         </View>
 
         <View style={[styles.actions, styles.padded]}>
-          <Button testID="start-transfer" title="Transfer" icon="send" onPress={startTransfer} style={styles.flex} />
+          <Button testID="start-transfer" title="Transfer" icon="send" onPress={() => startTransfer()} style={styles.flex} />
           <Button
             title="History"
             icon="history"
@@ -65,7 +71,7 @@ const HomeScreen = () => {
           <ThemedText variant="heading" style={styles.padded}>
             Quick send
           </ThemedText>
-          <QuickSend onSelect={startTransfer} onNew={startTransfer} />
+          <QuickSend onSelect={startTransfer} onNew={() => startTransfer()} />
         </View>
 
         <View style={[styles.section, styles.padded]}>
@@ -79,7 +85,12 @@ const HomeScreen = () => {
           </View>
           <Card style={styles.listCard}>
             {SAMPLE_TRANSACTIONS.slice(0, 5).map((transaction) => (
-              <TransactionRow key={transaction.id} transaction={transaction} onPress={openTransaction} />
+              <TransactionRow
+                key={transaction.id}
+                transaction={transaction}
+                onPress={openTransaction}
+                hideAmount={balanceHidden}
+              />
             ))}
           </Card>
         </View>

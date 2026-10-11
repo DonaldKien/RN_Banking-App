@@ -9,10 +9,12 @@ import { TextField } from "@/components/ui/text-field";
 import { Radius } from "@/constants/theme";
 import { ContactsList } from "@/features/recipients/contacts-list";
 import { SavedRecipientsList } from "@/features/recipients/saved-recipients-list";
+import { recipientSelected } from "@/features/transfer/transfer-slice";
 import { useTheme } from "@/hooks/use-theme";
 import { normaliseSearchText } from "@/lib/format";
 import { haptics } from "@/lib/haptics";
 import type { Recipient } from "@/services/api/types";
+import { useAppDispatch } from "@/store";
 
 type Source = "saved" | "contacts";
 
@@ -23,13 +25,15 @@ const SOURCES = [
 
 const RecipientPickerScreen = () => {
   const theme = useTheme();
+  const dispatch = useAppDispatch();
   const initialSource = SOURCES[0].value || "";
   const [source, setSource] = useState<Source>(initialSource);
   const [search, setSearch] = useState("");
   const searchQuery = normaliseSearchText(search);
 
-  const select = (_recipient: Recipient) => {
+  const select = (recipient: Recipient) => {
     haptics.selection();
+    dispatch(recipientSelected(recipient));
     router.back();
   };
 

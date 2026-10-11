@@ -7,10 +7,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Tabs } from "@/components/ui/tabs";
 import { SAMPLE_TRANSACTIONS } from "@/constants/sample-data";
+import { selectBalanceHidden } from "@/features/preferences/preferences-slice";
 import { ListSectionHeader } from "@/features/recipients/list-section-header";
 import { groupTransactionsByDay, type HistoryRow } from "@/features/transactions/group-by-day";
 import { TransactionRow } from "@/features/transactions/transaction-row";
 import type { Transaction, TransactionFilter } from "@/services/api/types";
+import { useAppSelector } from "@/store";
 
 const FILTERS = [
   { value: "all", label: "All" },
@@ -26,6 +28,7 @@ const openTransaction = (transaction: Transaction) => {
 const HistoryScreen = () => {
   const insets = useSafeAreaInsets();
   const [filter, setFilter] = useState<TransactionFilter>("all");
+  const balanceHidden = useAppSelector(selectBalanceHidden);
 
   const { rows, stickyHeaderIndices } = useMemo(
     () =>
@@ -39,7 +42,7 @@ const HistoryScreen = () => {
     item.type === "header" ? (
       <ListSectionHeader label={item.label} />
     ) : (
-      <TransactionRow transaction={item.transaction} onPress={openTransaction} />
+      <TransactionRow transaction={item.transaction} onPress={openTransaction} hideAmount={balanceHidden} />
     );
 
   return (
@@ -54,6 +57,7 @@ const HistoryScreen = () => {
         keyExtractor={(row) => row.key}
         getItemType={(row) => row.type}
         stickyHeaderIndices={stickyHeaderIndices}
+        extraData={balanceHidden}
         contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
         ListEmptyComponent={<EmptyState icon="receipt" title="No transactions" message="Nothing to show for this filter." />}
       />

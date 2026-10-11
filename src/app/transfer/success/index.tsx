@@ -11,10 +11,13 @@ import { DetailRow } from "@/components/ui/detail-row";
 import { Icon } from "@/components/ui/icon";
 import { MaxContentWidth, Radius } from "@/constants/theme";
 import { SAMPLE_ACCOUNT, SAMPLE_TRANSACTIONS } from "@/constants/sample-data";
+import { selectBalanceHidden } from "@/features/preferences/preferences-slice";
 import { describeRecipient } from "@/features/recipients/recipient-row";
+import { draftCleared, draftStarted } from "@/features/transfer/transfer-slice";
 import { useTheme } from "@/hooks/use-theme";
 import { formatDateTime } from "@/lib/format";
 import { formatMoney } from "@/lib/money";
+import { useAppDispatch, useAppSelector } from "@/store";
 
 const goHome = () => {
   router.dismissTo("/");
@@ -26,6 +29,13 @@ const TransferSuccessScreen = () => {
   const insets = useSafeAreaInsets();
   const transaction = SAMPLE_TRANSACTIONS[0];
   const balance = SAMPLE_ACCOUNT.balance;
+  const dispatch = useAppDispatch();
+  const balanceHidden = useAppSelector(selectBalanceHidden);
+
+  // The draft has been sent.
+  useEffect(() => {
+    dispatch(draftCleared());
+  }, [dispatch]);
 
   // Android back from a receipt returns home rather than to the spent form.
   useEffect(() => {
@@ -46,6 +56,11 @@ const TransferSuccessScreen = () => {
       transaction.note ? `Note: ${transaction.note}` : null,
     ];
     void Share.share({ message: lines.filter(Boolean).join("\n") });
+  };
+
+  const anotherTransfer = () => {
+    dispatch(draftStarted());
+    router.dismissTo("/transfer");
   };
 
   return (
@@ -85,14 +100,18 @@ const TransferSuccessScreen = () => {
             <DetailRow label="Date & time" value={formatDateTime(transaction.createdAt)} />
             {transaction.note && <DetailRow label="Note" value={transaction.note} />}
             <DetailRow label="Reference" value={transaction.reference} mono />
-            <DetailRow label="Available balance" value={formatMoney(balance)} valueColor="textSecondary" />
+            <DetailRow
+              label="Available balance"
+              value={balanceHidden ? "RM ••••••" : formatMoney(balance)}
+              valueColor="textSecondary"
+            />
           </Card>
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(500)} style={styles.actions}>
           <Button testID="done" title="Done" onPress={goHome} />
           <Button title="Share receipt" icon="share" variant="secondary" onPress={share} />
-          <Button title="Make another transfer" variant="ghost" onPress={() => router.dismissTo("/transfer")} />
+          <Button title="Make another transfer" variant="ghost" onPress={anotherTransfer} />
         </Animated.View>
       </View>
     </ScrollView>

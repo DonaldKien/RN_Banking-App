@@ -1,19 +1,21 @@
-import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 
 import { ThemedText } from "@/components/themed-text";
 import { IconButton } from "@/components/ui/icon-button";
 import { Radius } from "@/constants/theme";
 import { SAMPLE_ACCOUNT } from "@/constants/sample-data";
+import { balanceVisibilityToggled, selectBalanceHidden } from "@/features/preferences/preferences-slice";
 import { useTheme } from "@/hooks/use-theme";
 import { maskAccountNumber } from "@/lib/format";
 import { formatMoney } from "@/lib/money";
+import { useAppDispatch, useAppSelector } from "@/store";
 
 const HIDDEN_AMOUNT = "RM ••••••";
 
 export const BalanceCard = () => {
   const theme = useTheme();
-  const [hidden, setHidden] = useState(false);
+  const dispatch = useAppDispatch();
+  const hidden = useAppSelector(selectBalanceHidden);
   const account = SAMPLE_ACCOUNT;
 
   const onPrimary = { color: theme.onPrimary };
@@ -33,7 +35,7 @@ export const BalanceCard = () => {
           icon={hidden ? "eye" : "eyeOff"}
           label={hidden ? "Show balance" : "Hide balance"}
           tone="onPrimary"
-          onPress={() => setHidden((value) => !value)}
+          onPress={() => dispatch(balanceVisibilityToggled())}
         />
       </View>
 

@@ -11,12 +11,15 @@ import { Icon } from "@/components/ui/icon";
 import { Radius } from "@/constants/theme";
 import { SAMPLE_TRANSACTIONS } from "@/constants/sample-data";
 import { describeRecipient } from "@/features/recipients/recipient-row";
+import { draftStarted } from "@/features/transfer/transfer-slice";
 import { useTheme } from "@/hooks/use-theme";
 import { formatDate, formatTime } from "@/lib/format";
-import { formatMoney } from "@/lib/money";
+import { formatMoney, senToAmountText } from "@/lib/money";
+import { useAppDispatch } from "@/store";
 
 const TransactionDetailScreen = () => {
   const theme = useTheme();
+  const dispatch = useAppDispatch();
   const { id } = useLocalSearchParams<{ id: string }>();
   const transaction = SAMPLE_TRANSACTIONS.find((item) => item.id === id);
 
@@ -26,11 +29,22 @@ const TransactionDetailScreen = () => {
 
   const isCredit = transaction.direction === "credit";
 
+  const sendAgain = () => {
+    dispatch(
+      draftStarted({
+        recipient: transaction.counterparty,
+        amountText: senToAmountText(transaction.amount),
+        note: transaction.note,
+      }),
+    );
+    router.push("/transfer");
+  };
+
   return (
     <FormScreen
       footer={
         isCredit ? undefined : (
-          <Button title="Send again" icon="retry" onPress={() => router.push("/transfer")} accessibilityHint="Opens a pre-filled transfer" />
+          <Button title="Send again" icon="retry" onPress={sendAgain} accessibilityHint="Opens a pre-filled transfer" />
         )
       }>
       <View style={styles.hero}>

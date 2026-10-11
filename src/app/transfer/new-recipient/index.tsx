@@ -9,6 +9,7 @@ import { SearchableDropdown } from "@/components/ui/searchable-dropdown";
 import { Tabs } from "@/components/ui/tabs";
 import { TextField } from "@/components/ui/text-field";
 import { AccountLookupStatus } from "@/features/recipients/account-lookup-status";
+import { recipientSelected } from "@/features/transfer/transfer-slice";
 import { useTheme } from "@/hooks/use-theme";
 import {
   ACCOUNT_NUMBER_MAX_LENGTH,
@@ -16,8 +17,9 @@ import {
   isValidAccountNumber,
   normaliseMalaysianMobile,
 } from "@/lib/identifiers";
-import { BANKS } from "@/services/api/banks";
+import { BANKS, DUITNOW_LABEL, findBank } from "@/services/api/banks";
 import type { RecipientType } from "@/services/api/types";
+import { useAppDispatch } from "@/store";
 
 const RECIPIENT_TYPES = [
   { value: "BANK_ACCOUNT", label: "Bank account" },
@@ -32,6 +34,7 @@ const PLACEHOLDER_HOLDER_NAME = "AISYAH BINTI AHMAD";
 /** Add a recipient by bank account or DuitNow mobile number. */
 const NewRecipientScreen = () => {
   const theme = useTheme();
+  const dispatch = useAppDispatch();
   const [recipientType, setRecipientType] = useState<RecipientType>("BANK_ACCOUNT");
   const [bankCode, setBankCode] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
@@ -45,9 +48,24 @@ const NewRecipientScreen = () => {
       : normaliseMalaysianMobile(mobile);
   const notFound = accountId !== null && accountId.endsWith("0000");
 
+  const saveRecipient = () => {
+    if (!accountId || notFound) return;
+    dispatch(
+      recipientSelected({
+        id: `new:${recipientType}:${accountId}`,
+        name: PLACEHOLDER_HOLDER_NAME,
+        type: recipientType,
+        accountId,
+        bankCode: recipientType === "BANK_ACCOUNT" ? bankCode : undefined,
+        bankName: recipientType === "DUITNOW_MOBILE" ? DUITNOW_LABEL : (findBank(bankCode)?.shortName ?? ""),
+      }),
+    );
+    router.dismissTo("/transfer");
+  };
+
   return (
     <FormScreen
-      footer={<Button title="Continue" onPress={() => router.dismissTo("/transfer")} testID="confirm-recipient" />}>
+      footer={<Button title="Continue" onPress={saveRecipient} testID="confirm-recipient" />}>
       <Tabs options={RECIPIENT_TYPES} value={recipientType} onChange={setRecipientType} />
 
       {recipientType === "BANK_ACCOUNT" ? (
