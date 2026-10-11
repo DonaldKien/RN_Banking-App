@@ -90,3 +90,6 @@ export interface AccountLookupRequest {
 export interface AccountLookupResult {
   name: string;
 }
+
+/** Failure modes the demo controls can force on the next transfer. */
+export type MockScenario = "none" | "network_error" | "timeout" | "server_error" | "insufficient_funds";
