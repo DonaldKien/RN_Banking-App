@@ -1,5 +1,7 @@
-import { fireEvent, render, screen } from "@testing-library/react-native";
+import { act, fireEvent, render, screen } from "@testing-library/react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+
+import { DEBOUNCE_MS } from "@/constants/debounce";
 
 import { SearchableDropdown } from "../searchable-dropdown";
 
@@ -40,10 +42,19 @@ const renderDropdown = (props: Partial<Parameters<typeof SearchableDropdown>[0]>
   return { onChange, onBlur };
 };
 
-/** Types into the search box. */
+/** Types into the search box and waits out the search debounce. */
 const search = (text: string) => {
   fireEvent.changeText(screen.getByPlaceholderText("Search bank name"), text);
+  act(() => jest.advanceTimersByTime(DEBOUNCE_MS.search));
 };
+
+beforeEach(() => {
+  jest.useFakeTimers();
+});
+
+afterEach(() => {
+  jest.useRealTimers();
+});
 
 describe("SearchableDropdown", () => {
   it("shows the placeholder, or the selected option's label", () => {

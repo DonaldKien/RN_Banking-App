@@ -10,6 +10,8 @@ import { Radius } from "@/constants/theme";
 import { ContactsList } from "@/features/recipients/contacts-list";
 import { SavedRecipientsList } from "@/features/recipients/saved-recipients-list";
 import { recipientSelected } from "@/features/transfer/transfer-slice";
+import { DEBOUNCE_MS } from "@/constants/debounce";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useTheme } from "@/hooks/use-theme";
 import { normaliseSearchText } from "@/lib/format";
 import { haptics } from "@/lib/haptics";
@@ -29,7 +31,11 @@ const RecipientPickerScreen = () => {
   const initialSource = SOURCES[0].value || "";
   const [source, setSource] = useState<Source>(initialSource);
   const [search, setSearch] = useState("");
-  const searchQuery = normaliseSearchText(search);
+  // Filter only once typing pauses, not on every keystroke.
+  const searchQuery = useDebouncedValue(
+    normaliseSearchText(search),
+    DEBOUNCE_MS.search,
+  );
 
   const select = (recipient: Recipient) => {
     haptics.selection();

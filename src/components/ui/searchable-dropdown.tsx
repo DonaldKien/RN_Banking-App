@@ -8,7 +8,9 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { IconButton } from "@/components/ui/icon-button";
 import { TextField } from "@/components/ui/text-field";
+import { DEBOUNCE_MS } from "@/constants/debounce";
 import { Radius } from "@/constants/theme";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useTheme } from "@/hooks/use-theme";
 import { normaliseSearchText } from "@/lib/format";
 import { haptics as hapticFeedback } from "@/lib/haptics";
@@ -82,7 +84,8 @@ export const SearchableDropdown = <T extends string>({
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState("");
 
-  const query = normaliseSearchText(search);
+  // Filter only once typing pauses, like every other search box.
+  const query = useDebouncedValue(normaliseSearchText(search), DEBOUNCE_MS.search);
   const filteredOptions = useMemo(() => options.filter((option) => matchesQuery(option, query)), [options, query]);
 
   const selectedOption = options.find((option) => option.value === value);

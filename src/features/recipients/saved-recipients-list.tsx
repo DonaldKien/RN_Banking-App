@@ -1,12 +1,15 @@
 import { FlashList, type ListRenderItem } from "@shopify/flash-list";
 import { useMemo } from "react";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { Banner } from "@/components/ui/banner";
 import { EmptyState } from "@/components/ui/empty-state";
-import { SAMPLE_RECIPIENTS } from "@/constants/sample-data";
+import { useTheme } from "@/hooks/use-theme";
 import type { Recipient } from "@/services/api/types";
 
 import { ListSectionHeader } from "./list-section-header";
+import { useRecentRecipients, useSavedRecipients } from "./queries";
 import { RecipientRow } from "./recipient-row";
 import { buildRecipientRows, type RecipientListRow } from "./recipient-rows";
 
@@ -17,12 +20,32 @@ export const SavedRecipientsList = ({
   search: string;
   onSelect: (recipient: Recipient) => void;
 }) => {
+  const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const saved = useSavedRecipients();
+  const recent = useRecentRecipients();
 
   const { rows, stickyHeaderIndices } = useMemo(
-    () => buildRecipientRows(SAMPLE_RECIPIENTS, SAMPLE_RECIPIENTS.slice(0, 3), search),
-    [search],
+    () => buildRecipientRows(saved.data ?? [], recent.data ?? [], search),
+    [saved.data, recent.data, search],
   );
+
+  if (saved.isPending) {
+    return <ActivityIndicator style={styles.loader} color={theme.primary} />;
+  }
+  if (!saved.data) {
+    return (
+      <View style={styles.padded}>
+        <Banner
+          tone="danger"
+          title="Couldn't load your recipients"
+          message="Check your connection and try again."
+          actionLabel="Try again"
+          onAction={() => void saved.refetch()}
+        />
+      </View>
+    );
+  }
 
   const renderItem: ListRenderItem<RecipientListRow> = ({ item }) =>
     item.type === "header" ? (
@@ -51,3 +74,12 @@ export const SavedRecipientsList = ({
     />
   );
 };
+
+const styles = StyleSheet.create({
+  loader: {
+    marginTop: 32,
+  },
+  padded: {
+    padding: 16,
+  },
+});
