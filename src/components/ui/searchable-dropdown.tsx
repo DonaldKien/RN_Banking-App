@@ -19,52 +19,34 @@ import { haptics as hapticFeedback } from "@/lib/haptics";
 export interface DropdownOption<T extends string> {
   value: T;
   label: string;
-  /** Optional second line, also searchable (e.g. a bank's full legal name). */
+  /** Second line, also searchable. */
   description?: string;
 }
 
 export interface SearchableDropdownProps<T extends string> {
-  /** Shown above the field and as the sheet's title. */
   label: string;
   options: readonly DropdownOption<T>[];
-  /** The selected option's value; empty or `null` when nothing is selected. */
   value: string | null | undefined;
   onChange: (value: T) => void;
-  /** Called when the sheet closes, so form libraries can mark the field as touched. */
+  /** Called when the sheet closes, so forms can mark the field as touched. */
   onBlur?: () => void;
   placeholder?: string;
   searchPlaceholder?: string;
-  /** Shown when the search matches nothing. */
   emptyMessage?: string;
   error?: string;
   helper?: string;
-  /** Icon shown at the start of the field, e.g. "bank". */
   icon?: IconName;
-  /** Play a light "tick" when an option is chosen. Defaults to `true`. */
   haptics?: boolean;
   testID?: string;
 }
 
-/** Does the option's label or description contain the (already normalised) query? */
 const matchesQuery = <T extends string>(option: DropdownOption<T>, query: string): boolean => {
   if (!query) return true;
   if (normaliseSearchText(option.label).includes(query)) return true;
   return option.description !== undefined && normaliseSearchText(option.description).includes(query);
 };
 
-/**
- * A field that opens a searchable list of options in a sheet, the mobile
- * version of a searchable dropdown. Use it when the list is too long for
- * chips or tabs (banks, countries, ...).
- *
- * @example
- * <SearchableDropdown
- *   label="Bank"
- *   options={[{ value: "MBB", label: "Maybank", description: "Malayan Banking Berhad" }]}
- *   value={bankCode}
- *   onChange={setBankCode}
- * />
- */
+/** A field that opens a sheet with a search box and a list of options. */
 export const SearchableDropdown = <T extends string>({
   label,
   options,
@@ -85,7 +67,6 @@ export const SearchableDropdown = <T extends string>({
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState("");
 
-  // Filter only once typing pauses, like every other search box.
   const query = useDebouncedValue(normaliseSearchText(search), DEBOUNCE_MS.search);
   const filteredOptions = useMemo(() => options.filter((option) => matchesQuery(option, query)), [options, query]);
 

@@ -21,7 +21,6 @@ import { haptics } from "@/lib/haptics";
 import { TRANSFER_LIMITS } from "@/services/api/limits";
 import { useAppDispatch, useAppSelector } from "@/store";
 
-/** Step 1 of the transfer flow: who, how much, and an optional note. */
 const TransferFormScreen = () => {
   const dispatch = useAppDispatch();
   const recipient = useAppSelector(selectRecipient);
@@ -30,8 +29,7 @@ const TransferFormScreen = () => {
   const note = useAppSelector(selectNote);
   const account = useAccount();
 
-  // Errors for untouched fields appear only after the first "Review" press,
-  // so the form doesn't greet the user with red text.
+  // Hide errors for untouched fields until the first "Review" press.
   const [submitAttempted, setSubmitAttempted] = useState(false);
 
   const errors = validateTransfer({
@@ -45,7 +43,6 @@ const TransferFormScreen = () => {
 
   const visibleErrors = {
     recipient: submitAttempted ? errors.recipient : undefined,
-    // Amount errors (e.g. exceeding the balance) are shown live while typing.
     amount: submitAttempted || amountText !== "" ? errors.amount : undefined,
     note: errors.note,
   };

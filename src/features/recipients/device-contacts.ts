@@ -1,7 +1,3 @@
-/**
- * Access to the phone's address book, used to pay contacts via DuitNow
- * (mobile number as the payment proxy).
- */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Contact,
@@ -23,13 +19,13 @@ export type ContactsAccess =
   | { status: "denied"; canAskAgain: boolean }
   | { status: "unavailable" };
 
-/** One row per phone number, so a contact with two numbers yields two rows. */
+/** One entry per phone number. */
 export interface DeviceContactEntry {
   key: string;
   name: string;
   phoneLabel: string;
   rawPhone: string;
-  /** `null` when the number can't be used for DuitNow (e.g. not a Malaysian mobile). */
+  /** `null` when the number can't be used for DuitNow. */
   recipient: Recipient | null;
 }
 
@@ -44,8 +40,7 @@ const readContactsAccess = async (): Promise<ContactsAccess> => {
 };
 
 const loadContacts = async (): Promise<DeviceContactEntry[]> => {
-  // getAllDetails fetches only the requested fields without materialising full
-  // Contact objects, which keeps large address books fast to load.
+  // getAllDetails skips building full Contact objects: fast for large address books.
   const contacts = await Contact.getAllDetails([ContactField.FULL_NAME, ContactField.PHONES], {
     sortOrder: ContactsSortOrder.GivenName,
   });
@@ -81,8 +76,7 @@ export const useContactsAccess = () => {
   return useQuery({
     queryKey: queryKeys.device.contactsPermission,
     queryFn: readContactsAccess,
-    // Re-check whenever the screen regains focus: the user may have changed
-    // the permission in system Settings.
+    // The permission may have changed in Settings.
     staleTime: 0,
   });
 };

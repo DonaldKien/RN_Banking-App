@@ -1,14 +1,7 @@
 /**
- * Orchestrates "authenticate, then submit" for the review screen.
- *
- * Security properties:
- * - Every submission requires a fresh authentication; approvals are never
- *   cached or reused across attempts.
- * - The submit call is only reachable from a successful authentication
- *   (device auth or verified PIN), so there is no code path that sends money
- *   without the user's explicit approval.
- * - The idempotency key is fixed for the draft, so retries after a timeout
- *   can't double-charge.
+ * Authenticate-then-submit for the review screen. Every attempt needs fresh
+ * authentication, submit is only reachable after it, and the idempotency key
+ * is fixed per draft so retries can't double-charge.
  */
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { randomUUID } from "expo-crypto";
@@ -55,8 +48,7 @@ const useSubmitTransferMutation = () => {
     mutationFn: ({ request, scenario }: { request: TransferRequest; scenario: MockScenario }) =>
       submitTransfer(request, { scenario }),
     onSuccess: (receipt) => {
-      // Seed caches with server-confirmed data so the receipt and the new
-      // balance render immediately, then refresh everything that changed.
+      // Show the receipt and new balance immediately, then refresh.
       queryClient.setQueryData(queryKeys.transactions.detail(receipt.transaction.id), receipt.transaction);
       queryClient.setQueryData<Account>(queryKeys.account, (account) =>
         account ? { ...account, balance: receipt.balanceAfter } : account,
@@ -68,14 +60,12 @@ const useSubmitTransferMutation = () => {
     onError: (error) => {
       if (!isApiError(error)) return;
 
-      // The balance we validated against was out of date; fetch the real one.
+      // Our cached balance was stale.
       if (error.code === "INSUFFICIENT_FUNDS" || error.code === "DAILY_LIMIT_EXCEEDED") {
         void queryClient.invalidateQueries({ queryKey: queryKeys.account });
       }
 
-      // A timeout means we don't know whether the transfer went through: the
-      // server may have processed it. Refresh everything a transfer changes,
-      // so the balance and history are right even if the user doesn't retry.
+      // The server may have processed it, so refresh as if it succeeded.
       if (error.code === "TIMEOUT") {
         void queryClient.invalidateQueries({ queryKey: queryKeys.account });
         void queryClient.invalidateQueries({ queryKey: queryKeys.transactions.all });
@@ -100,21 +90,16 @@ export const useConfirmTransfer = ({ onSuccess }: { onSuccess: (receipt: Transfe
   const submitMutation = useSubmitTransferMutation();
 
   const [phase, setPhase] = useState<ConfirmPhase>({ name: "idle" });
-  /** Short, non-blocking feedback such as "Authentication cancelled". */
   const [notice, setNotice] = useState<string | null>(null);
 
-  // One idempotency key per draft; kept across retries, reset by any edit.
+  // One key per draft: kept across retries, cleared by any edit.
   useEffect(() => {
     if (!idempotencyKey) dispatch(attemptPrepared(randomUUID()));
   }, [dispatch, idempotencyKey]);
 
   const busy = phase.name === "authenticating" || phase.name === "submitting";
 
-  /**
-   * The draft's idempotency key. Normally created by the effect above; if the
-   * user confirms before that effect has run, create it right here instead of
-   * failing.
-   */
+  // In case the user confirms before the effect above has run.
   const getIdempotencyKey = (): string => {
     const existing = selectIdempotencyKey(store.getState());
     if (existing) return existing;
@@ -124,7 +109,6 @@ export const useConfirmTransfer = ({ onSuccess }: { onSuccess: (receipt: Transfe
   };
 
   const submit = async (authorization: TransferAuthorization) => {
-    // Never leave the screen stuck in "authenticating" / "pin" if the draft is incomplete.
     if (!recipient || amount === null) {
       setPhase({ name: "idle" });
       setNotice("This transfer is missing details. Go back and check the recipient and amount.");
@@ -136,7 +120,6 @@ export const useConfirmTransfer = ({ onSuccess }: { onSuccess: (receipt: Transfe
     try {
       const receipt = await submitMutation.mutateAsync({
         request: { idempotencyKey, recipient, amount, note: note.trim() || undefined, authorization },
-        // Read at call time so the latest demo setting applies.
         scenario: selectTransferScenario(store.getState()),
       });
       haptics.success();
@@ -165,7 +148,7 @@ export const useConfirmTransfer = ({ onSuccess }: { onSuccess: (receipt: Transfe
 
     switch (outcome.status) {
       case "success":
-        // Production: this would be a server challenge signed by a biometric-bound key.
+        // Production: sign a server challenge with a biometric-bound key instead.
         await submit({ method: capability.method, assertion: `${capability.method}:${Date.now()}` });
         break;
       case "cancelled":
@@ -183,11 +166,7 @@ export const useConfirmTransfer = ({ onSuccess }: { onSuccess: (receipt: Transfe
     }
   };
 
-  /**
-   * Verifies the PIN; throws so the PIN pad can show inline errors. Called
-   * directly rather than via `useMutation`, which would keep the PIN in the
-   * mutation cache as `variables`.
-   */
+  // Throws so the PIN pad can show the error. Not a useMutation: that would cache the PIN.
   const confirmWithPin = async (pin: string) => {
     const { token } = await verifyPin(pin);
     await submit({ method: "pin", token });

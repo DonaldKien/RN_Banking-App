@@ -25,7 +25,6 @@ import { BANKS } from "@/services/api/banks";
 import type { AccountLookupRequest } from "@/services/api/types";
 import { useAppDispatch } from "@/store";
 
-/** The form's `control`, typed with its values and the request its schema produces. */
 type NewRecipientControl = Control<NewRecipientFormValues, unknown, AccountLookupRequest>;
 
 const RECIPIENT_TYPES = [
@@ -33,44 +32,26 @@ const RECIPIENT_TYPES = [
   { value: "DUITNOW_MOBILE", label: "Mobile number" },
 ] as const;
 
-/** Bank picker options: short name, with the full legal name as a searchable second line. */
 const BANK_OPTIONS = BANKS.map((bank) => ({ value: bank.code, label: bank.shortName, description: bank.name }));
 
-// ---------------------------------------------------------------------------
-// Screen
-// ---------------------------------------------------------------------------
-
-/**
- * Add a new recipient by bank account or DuitNow mobile number.
- *
- * 1. The user picks the recipient type and enters the details.
- * 2. Once the details are complete, the bank confirms the account holder's name.
- * 3. "Continue" saves the verified recipient to the transfer and goes back.
- *
- * Form state lives in React Hook Form; the rules live in the Zod schema
- * (`features/recipients/new-recipient-form.ts`).
- */
+/** Add a recipient by bank account or DuitNow mobile, verified by the bank's name check. */
 const NewRecipientScreen = () => {
   const dispatch = useAppDispatch();
 
   const { control, handleSubmit, clearErrors } = useForm<NewRecipientFormValues, unknown, AccountLookupRequest>({
     resolver: zodResolver(newRecipientSchema),
     defaultValues: NEW_RECIPIENT_DEFAULTS,
-    // Show a field's error once the user leaves it, then update it live as they fix it.
     mode: "onTouched",
   });
 
-  // The form's live values drive which fields are shown and the name check.
   const formValues = useWatch({ control });
   const recipientType = formValues.type ?? "BANK_ACCOUNT";
   const hasChosenBank = Boolean(formValues.bankCode);
 
   const accountHolder = useAccountHolderLookup(formValues);
 
-  /** Runs only when every field is valid. `validRequest` comes from the Zod schema. */
   const saveRecipient = (validRequest: AccountLookupRequest) => {
-    // Valid details, but the bank hasn't confirmed the account holder yet:
-    // the status below already explains why (still checking, or not found).
+    // Not verified yet: the status below already explains why.
     if (!accountHolder.verifiedName) {
       if (!accountHolder.isChecking) haptics.error();
       return;
@@ -108,11 +89,6 @@ const NewRecipientScreen = () => {
 
 export default NewRecipientScreen;
 
-// ---------------------------------------------------------------------------
-// Form sections
-// ---------------------------------------------------------------------------
-
-/** "Bank account" / "Mobile number" switch. */
 const RecipientTypeTabs = ({ control, onTypeChange }: { control: NewRecipientControl; onTypeChange: () => void }) => (
   <Controller
     control={control}
@@ -123,7 +99,6 @@ const RecipientTypeTabs = ({ control, onTypeChange }: { control: NewRecipientCon
         value={field.value}
         onChange={(nextType) => {
           field.onChange(nextType);
-          // Errors from the other recipient type no longer apply.
           onTypeChange();
         }}
       />
@@ -131,7 +106,6 @@ const RecipientTypeTabs = ({ control, onTypeChange }: { control: NewRecipientCon
   />
 );
 
-/** Bank picker + account number, for paying a bank account directly. */
 const BankAccountFields = ({ control, hasChosenBank }: { control: NewRecipientControl; hasChosenBank: boolean }) => (
   <>
     <Controller
@@ -175,7 +149,6 @@ const BankAccountFields = ({ control, hasChosenBank }: { control: NewRecipientCo
   </>
 );
 
-/** Mobile number, for paying via DuitNow. */
 const MobileNumberField = ({ control }: { control: NewRecipientControl }) => {
   const theme = useTheme();
   return (

@@ -25,7 +25,6 @@ const goHome = () => {
   router.dismissTo("/");
 };
 
-/** Step 3: receipt. The transaction is read from the cache seeded by the mutation. */
 const TransferSuccessScreen = () => {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
@@ -35,16 +34,14 @@ const TransferSuccessScreen = () => {
   const { data: balance } = useBalance();
   const balanceHidden = useAppSelector(selectBalanceHidden);
 
-  // The draft has been sent; clear it once the receipt is dismissed. Clearing
-  // on unmount (not mount) means the review screen, still animating out
-  // underneath, never sees an empty draft.
+  // Clear on unmount, not mount: the review screen is still animating out underneath.
   useEffect(() => {
     return () => {
       dispatch(draftCleared());
     };
   }, [dispatch]);
 
-  // Android back from a receipt returns home rather than to the spent form.
+  // Android back goes home, not to the spent form.
   useEffect(() => {
     const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
       goHome();
@@ -57,8 +54,7 @@ const TransferSuccessScreen = () => {
     return <ActivityIndicator style={styles.loader} color={theme.primary} />;
   }
 
-  // We only get here after a successful transfer, so the money has moved even
-  // if the receipt details can't be loaded right now.
+  // Only reached after a successful transfer, so the money has moved.
   if (!transaction) {
     return (
       <View style={[styles.fallback, { paddingTop: insets.top + 32, paddingBottom: insets.bottom + 24 }]}>

@@ -1,7 +1,3 @@
-/**
- * Wire types shared between the (mock) banking API and the app. In a real
- * project these would be generated from the backend's OpenAPI schema.
- */
 import type { Sen } from "@/lib/money";
 
 export interface Bank {
@@ -10,7 +6,6 @@ export interface Bank {
   shortName: string;
 }
 
-/** How funds are routed: directly to an account number, or via a DuitNow mobile proxy. */
 export type RecipientType = "BANK_ACCOUNT" | "DUITNOW_MOBILE";
 
 export interface Recipient {
@@ -43,7 +38,7 @@ export interface Transaction {
   reference: string;
   direction: TransactionDirection;
   amount: Sen;
-  /** Snapshot of the other party at the time of the transaction. */
+  /** Snapshot at the time of the transaction. */
   counterparty: Recipient;
   note?: string;
   createdAt: string;
@@ -56,19 +51,15 @@ export interface Page<T> {
 }
 
 /**
- * Proof that the user approved this specific transfer.
- *
- * Device auth (biometrics / passcode) carries an `assertion`; in production
- * this would be a server nonce signed by a key held in the Secure Enclave /
- * Android Keystore that is only unlocked by a successful biometric check.
- * PIN auth carries a single-use token issued by `verifyPin`.
+ * Proof the user approved this transfer. In production `assertion` would be a
+ * server nonce signed by a biometric-bound key; PIN tokens are single-use.
  */
 export type TransferAuthorization =
   | { method: "biometric" | "device_credential"; assertion: string }
   | { method: "pin"; token: string };
 
 export interface TransferRequest {
-  /** Client-generated key; replaying a request with the same key never moves money twice. */
+  /** Replaying the same key never moves money twice. */
   idempotencyKey: string;
   recipient: Recipient;
   amount: Sen;
@@ -91,5 +82,4 @@ export interface AccountLookupResult {
   name: string;
 }
 
-/** Failure modes the demo controls can force on the next transfer. */
 export type MockScenario = "none" | "network_error" | "timeout" | "server_error" | "insufficient_funds";

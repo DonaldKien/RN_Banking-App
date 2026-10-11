@@ -16,15 +16,11 @@ const transactionsInfiniteOptions = (filter: TransactionFilter) => {
   };
 };
 
-/** Paginated history for the full transactions list. */
 export const useTransactions = (filter: TransactionFilter) => {
   return useInfiniteQuery(transactionsInfiniteOptions(filter));
 };
 
-/**
- * The latest few transactions for the home screen. Shares its cache entry
- * with the "all" history list, so opening History is instant.
- */
+/** Shares the "all" history cache, so opening History is instant. */
 export const useRecentTransactions = (count = 5) => {
   return useInfiniteQuery({
     ...transactionsInfiniteOptions("all"),
@@ -32,10 +28,7 @@ export const useRecentTransactions = (count = 5) => {
   });
 };
 
-/**
- * A single transaction. Seeds from any list already in the cache so details
- * open instantly, then refreshes in the background.
- */
+/** Seeds from any cached list so details open instantly. */
 export const useTransaction = (id: string) => {
   const queryClient = useQueryClient();
   return useQuery({

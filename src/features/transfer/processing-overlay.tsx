@@ -5,12 +5,7 @@ import { ThemedText } from "@/components/themed-text";
 import { Radius } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 
-/**
- * Blocking overlay while the transfer is in flight. Rendered as an in-screen
- * overlay rather than a second `Modal`, because iOS cannot present a modal
- * while the PIN sheet's modal is still dismissing. The review screen disables
- * back navigation for the same period.
- */
+// Not a Modal: iOS can't present one while the PIN sheet's modal is still dismissing.
 export const ProcessingOverlay = ({ message }: { message: string }) => {
   const theme = useTheme();
   return (

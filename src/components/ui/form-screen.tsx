@@ -5,10 +5,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaxContentWidth } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 
-/**
- * Scrollable screen body with a footer pinned above the keyboard and the
- * home indicator — the layout used by every step of the transfer flow.
- */
 export const FormScreen = ({ children, footer }: { children: ReactNode; footer?: ReactNode }) => {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
@@ -17,7 +13,7 @@ export const FormScreen = ({ children, footer }: { children: ReactNode; footer?:
     <KeyboardAvoidingView
       style={[styles.flex, { backgroundColor: theme.background }]}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
-      // Offset by the native header (status bar + 44pt nav bar) above this view.
+      // Status bar + 44pt nav bar.
       keyboardVerticalOffset={Platform.OS === "ios" ? insets.top + 44 : 0}>
       <ScrollView
         style={styles.flex}

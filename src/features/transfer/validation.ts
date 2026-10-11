@@ -1,7 +1,3 @@
-/**
- * Pure validation rules for the transfer form. Kept free of React so they are
- * trivially unit-testable and reusable (e.g. by a future scheduled-transfer flow).
- */
 import { formatMoney, type Sen } from "@/lib/money";
 import { TRANSFER_LIMITS } from "@/services/api/limits";
 import type { Recipient } from "@/services/api/types";
@@ -10,9 +6,7 @@ export type TransferField = "recipient" | "amount" | "note";
 export type TransferFieldErrors = Partial<Record<TransferField, string>>;
 
 export interface AmountContext {
-  /** Current available balance, when known. */
   balance?: Sen;
-  /** What's left of today's transfer limit, when known. */
   dailyRemaining?: Sen;
 }
 

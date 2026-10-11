@@ -13,11 +13,7 @@ import { useRecentRecipients } from "./queries";
 
 const ITEM_WIDTH = 72;
 
-/**
- * Horizontal strip of recently paid recipients for one-tap re-sending.
- * The API caps it at 10 items, so a plain ScrollView is cheaper than a
- * virtualised list here.
- */
+// At most 10 items, so a plain ScrollView is cheaper than a virtualised list.
 export const QuickSend = ({
   onSelect,
   onNew,
@@ -28,7 +24,6 @@ export const QuickSend = ({
   const theme = useTheme();
   const { data: recipients, isError } = useRecentRecipients();
 
-  // Hide the strip only if it failed and there is nothing cached to show.
   if (isError && !recipients) return null;
 
   return (

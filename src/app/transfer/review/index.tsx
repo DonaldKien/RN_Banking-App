@@ -30,7 +30,6 @@ const ERROR_ACTION_LABEL: Record<TransferErrorAction, string> = {
   reauthenticate: "Approve again",
 };
 
-/** Step 2: confirm details, authenticate, submit. */
 const ReviewTransferScreen = () => {
   const theme = useTheme();
   const recipient = useAppSelector(selectRecipient);
@@ -43,13 +42,12 @@ const ReviewTransferScreen = () => {
       router.replace({ pathname: "/transfer/success", params: { id: receipt.transaction.id } }),
   });
 
-  // Block Android hardware back while authenticating or submitting.
   useEffect(() => {
     const subscription = BackHandler.addEventListener("hardwareBackPress", () => flow.busy);
     return () => subscription.remove();
   }, [flow.busy]);
 
-  // Reached without a complete draft (e.g. via deep link): restart the flow.
+  // e.g. opened via a deep link without a draft.
   if (!recipient || amount === null) return <Redirect href="/transfer" />;
 
   const { phase, capability } = flow;
@@ -58,7 +56,6 @@ const ReviewTransferScreen = () => {
     if (action === "retry" || action === "reauthenticate") {
       void flow.confirm();
     } else {
-      // Editing goes back to the form; the edit invalidates the idempotency key.
       flow.clearError();
       router.back();
     }
@@ -75,7 +72,6 @@ const ReviewTransferScreen = () => {
           <View style={styles.footer}>
             <Button
               testID="confirm-transfer"
-              // Sends POST /v1/transfers: ignore double taps.
               throttle
               title={phase.name === "authenticating" ? `Waiting for ${capability?.label ?? "approval"}…` : confirmLabel}
               icon={capability?.icon ?? "lock"}
@@ -109,7 +105,6 @@ const ReviewTransferScreen = () => {
             message={phase.error.message}
             actionLabel={ERROR_ACTION_LABEL[phase.error.action]}
             onAction={() => handleErrorAction(phase.error.action)}
-            // "Try again" / "Approve again" re-sends POST /v1/transfers.
             throttleAction
           />
         )}

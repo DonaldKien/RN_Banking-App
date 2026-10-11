@@ -1,7 +1,4 @@
-/**
- * Demo controls so reviewers can exercise every error path and the PIN
- * fallback on any device or simulator. Not part of a production build.
- */
+// Demo controls for reviewers. Not part of a production build.
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 
 import type { MockScenario } from "@/services/api/types";
@@ -9,9 +6,9 @@ import type { RootState } from "@/store";
 
 export interface DemoState {
   transferScenario: MockScenario;
-  /** Reset the scenario to "none" after it has been applied once. */
+  /** Back to "none" after one use. */
   scenarioOneShot: boolean;
-  /** Pretend the device has no biometrics/passcode to demo the PIN fallback. */
+  /** Act as if the device has no biometrics or passcode. */
   forcePinFallback: boolean;
 }
 

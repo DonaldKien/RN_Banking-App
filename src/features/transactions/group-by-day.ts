@@ -5,11 +5,7 @@ export type HistoryRow =
   | { type: "header"; key: string; label: string }
   | { type: "transaction"; key: string; transaction: Transaction };
 
-/**
- * Flattens transactions into a single list with a header row before each
- * day. A flat array (rather than nested sections) is what FlashList
- * virtualises best; `stickyHeaderIndices` pins the day headers.
- */
+// A flat array (not nested sections) is what FlashList virtualises best.
 export const groupTransactionsByDay = (
   transactions: readonly Transaction[],
   now: Date = new Date(),

@@ -1,7 +1,6 @@
 import { formatMoney } from "@/lib/money";
 import { isApiError } from "@/services/api/errors";
 
-/** What the review screen should offer after a failed transfer. */
 export type TransferErrorAction = "retry" | "edit_amount" | "change_recipient" | "reauthenticate";
 
 export interface TransferErrorDescription {
@@ -10,10 +9,7 @@ export interface TransferErrorDescription {
   action: TransferErrorAction;
 }
 
-/**
- * Translates API errors into copy that tells the user (1) what happened,
- * (2) whether their money moved, and (3) what to do next.
- */
+/** Each message says what happened, whether money moved, and what to do next. */
 export const describeTransferError = (error: unknown): TransferErrorDescription => {
   if (!isApiError(error)) {
     return {

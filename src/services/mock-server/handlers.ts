@@ -1,9 +1,4 @@
-/**
- * Route handlers for the mock banking backend. Each handler receives a parsed
- * request and returns the JSON body for a 2xx response, or throws an
- * `ApiError`, which the router turns into an error response with the matching
- * HTTP status. The data comes from the in-memory mock database.
- */
+/** Mock backend handlers: return the JSON body, or throw an `ApiError` (mapped to an HTTP status). */
 import { randomUUID } from "expo-crypto";
 
 import { isValidAccountNumber, normaliseMalaysianMobile } from "@/lib/identifiers";
@@ -29,39 +24,27 @@ import { DEMO_PIN, MAX_PIN_ATTEMPTS, db, generateReference, resetDb } from "./db
 export interface MockRequest {
   method: string;
   path: string;
-  /** Path parameters, e.g. `{ id }` for `API_ENDPOINTS.transactionDetail`. */
   params: Record<string, string>;
   query: Record<string, string>;
-  /** Lower-cased header names. */
+  /** Lower-cased names. */
   headers: Record<string, string>;
   body: unknown;
 }
 
 export interface MockRoute {
   method: "GET" | "POST";
-  /** An entry from `API_ENDPOINTS`; `:name` segments become `params`. */
   pattern: ApiEndpoint;
-  /** Simulated server latency range in milliseconds. */
   latency: [min: number, max: number];
   handler: (request: MockRequest) => unknown;
 }
 
-// ---------------------------------------------------------------------------
-// Query parameter helpers
-// ---------------------------------------------------------------------------
-
 const MAX_PAGE_SIZE = 100;
 
-/** Reads a `limit` query parameter, falling back to the default for missing or invalid values. */
 const readLimit = (raw: string | undefined, fallback: number): number => {
   const limit = Number(raw);
   if (!Number.isInteger(limit) || limit < 1) return fallback;
   return Math.min(limit, MAX_PAGE_SIZE);
 };
-
-// ---------------------------------------------------------------------------
-// Account & recipients
-// ---------------------------------------------------------------------------
 
 const getAccount = () => db.state.account;
 
@@ -83,7 +66,6 @@ const getRecentRecipients = ({ query }: MockRequest): Recipient[] => {
   return recent;
 };
 
-/** Name enquiry: resolves the registered holder name of an account or DuitNow ID. */
 const lookupAccount = ({ body }: MockRequest): AccountLookupResult => {
   const request = body as Partial<AccountLookupRequest> | null;
   const raw = request?.accountId ?? "";
@@ -99,7 +81,7 @@ const lookupAccount = ({ body }: MockRequest): AccountLookupResult => {
   if (accountId === db.state.account.accountNumber) {
     throw new ApiError("INVALID_RECIPIENT", "You can't transfer to your own account.");
   }
-  // Convention for demoing the "not found" state: identifiers ending in 0000.
+  // Demo convention: numbers ending in 0000 don't exist.
   if (accountId.endsWith("0000")) {
     throw new ApiError("ACCOUNT_NOT_FOUND", "No account matches these details.");
   }
@@ -107,17 +89,13 @@ const lookupAccount = ({ body }: MockRequest): AccountLookupResult => {
   const known = db.state.recipients.find((r) => r.accountId === accountId);
   if (known) return { name: known.name };
 
-  // Unknown account: derive a stable, realistic name from the number.
+  // Unknown account: derive a stable name from the number.
   const pool = db.state.recipients;
   const hash = [...accountId].reduce((acc, ch) => (acc * 31 + ch.charCodeAt(0)) >>> 0, 7);
   const [first] = pool[hash % pool.length].name.split(" ");
   const last = pool[(hash >>> 8) % pool.length].name.split(" ").slice(-1)[0];
   return { name: `${first} ${last}` };
 };
-
-// ---------------------------------------------------------------------------
-// Transactions
-// ---------------------------------------------------------------------------
 
 const getTransactions = ({ query }: MockRequest): Page<Transaction> => {
   const cursor = query.cursor ?? null;
@@ -126,13 +104,11 @@ const getTransactions = ({ query }: MockRequest): Page<Transaction> => {
 
   const source =
     filter === "all" ? db.state.transactions : db.state.transactions.filter((t) => t.direction === filter);
-  // Keyset pagination: the cursor is the id of the last item already received,
-  // so newly inserted transactions never shift or duplicate later pages.
+  // Keyset pagination (cursor = last id received): new transactions can't shift pages.
   let start = 0;
   if (cursor) {
     const cursorIndex = source.findIndex((t) => t.id === cursor);
-    // An unknown cursor must not silently restart from the first page: the
-    // client would append page 1 again and show duplicate rows.
+    // Restarting from page 1 would duplicate rows on the client.
     if (cursorIndex === -1) throw new ApiError("BAD_REQUEST", "Invalid pagination cursor.");
     start = cursorIndex + 1;
   }
@@ -147,11 +123,6 @@ const getTransaction = ({ params }: MockRequest): Transaction => {
   return tx;
 };
 
-// ---------------------------------------------------------------------------
-// Authorisation
-// ---------------------------------------------------------------------------
-
-/** Verifies the in-app transaction PIN and returns a single-use authorisation token. */
 const verifyPin = ({ body }: MockRequest): { token: string } => {
   const pin = (body as { pin?: unknown } | null)?.pin;
   const state = db.state;
@@ -174,13 +145,9 @@ const verifyPin = ({ body }: MockRequest): { token: string } => {
   return { token };
 };
 
-// ---------------------------------------------------------------------------
-// Transfers
-// ---------------------------------------------------------------------------
-
 const assertAuthorised = (auth: TransferAuthorization | undefined): void => {
   if (auth?.method === "pin") {
-    // PIN tokens are single-use: consuming it prevents replaying an approval.
+    // Single-use: deleting the token prevents replaying an approval.
     if (!db.state.pinTokens.delete(auth.token)) {
       throw new ApiError("AUTH_REQUIRED", "Your approval has expired. Please authenticate again.");
     }
@@ -191,14 +158,11 @@ const assertAuthorised = (auth: TransferAuthorization | undefined): void => {
   }
 };
 
-/**
- * POST /v1/transfers. The `Idempotency-Key` header makes retries safe: a
- * replayed key returns the original receipt instead of moving money again.
- */
 const submitTransfer = ({ headers, body }: MockRequest): TransferReceipt => {
   const idempotencyKey = headers["idempotency-key"];
   if (!idempotencyKey) throw new ApiError("BAD_REQUEST", "The Idempotency-Key header is required.");
 
+  // A replayed key returns the original receipt instead of moving money again.
   const previous = db.state.idempotency.get(idempotencyKey);
   if (previous) return previous;
 
@@ -253,10 +217,6 @@ const submitTransfer = ({ headers, body }: MockRequest): TransferReceipt => {
   db.state.idempotency.set(idempotencyKey, receipt);
   return receipt;
 };
-
-// ---------------------------------------------------------------------------
-// Demo utilities
-// ---------------------------------------------------------------------------
 
 const resetDemoData = () => {
   resetDb();

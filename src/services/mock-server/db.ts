@@ -1,10 +1,4 @@
-/**
- * In-memory "backend" state for the simulated banking API.
- *
- * Data is generated from a seeded PRNG so every launch shows the same
- * recipients and history, while still being large enough (≈1,500
- * transactions, ≈150 saved recipients) to exercise list virtualisation.
- */
+// In-memory mock backend. A seeded PRNG gives the same, large dataset on every launch.
 import { ringgit } from "@/lib/money";
 
 import { BANKS, DUITNOW_LABEL, OWN_BANK } from "@/services/api/banks";
@@ -28,7 +22,7 @@ const MERCHANT_CREDITS = ["Salary · Acme Sdn Bhd", "Refund · Shopee", "Cashbac
 export const DEMO_PIN = "123456";
 export const MAX_PIN_ATTEMPTS = 5;
 
-/** Deterministic PRNG (mulberry32) so seed data is identical across launches. */
+/** mulberry32 */
 const createRandom = (seed: number) => {
   let state = seed;
   const next = () => {
@@ -108,7 +102,6 @@ const createTransactions = (
   now: number,
 ): Transaction[] => {
   const transactions: Transaction[] = [];
-  // A handful of frequent recipients makes "recent" / "quick send" realistic.
   const regulars = recipients.slice(0, 12);
   let cursor = now - 20 * 60 * 1000;
 
@@ -172,7 +165,6 @@ export const createInitialState = (now: number = Date.now()): MockDbState => {
   };
 };
 
-/** The live mock database. Mutated only by the mock server handlers. */
 export const db: { state: MockDbState } = { state: createInitialState() };
 
 export const resetDb = (): void => {

@@ -1,9 +1,6 @@
 import type { AccountLookupRequest, TransactionFilter } from "@/services/api/types";
 
-/**
- * Centralised query-key factory. Keys are hierarchical so related data can be
- * invalidated together, e.g. `queryKeys.transactions.all` after a transfer.
- */
+// Hierarchical keys, so related data can be invalidated together.
 export const queryKeys = {
   account: ["account"] as const,
   recipients: {

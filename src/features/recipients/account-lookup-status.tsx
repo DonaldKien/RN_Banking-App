@@ -9,7 +9,6 @@ import { Icon } from "@/components/ui/icon";
 import { useTheme } from "@/hooks/use-theme";
 import { isApiError } from "@/services/api/errors";
 
-/** Turns a failed name check into the message shown to the user. */
 const describeLookupError = (
   error: unknown,
 ): { title: string; message: string; canRetry: boolean } => {
@@ -87,11 +86,6 @@ const LookupErrorBanner = ({
   );
 };
 
-/**
- * Shows the state of the account-holder name check, one state at a time:
- * checking → verified name, or an error. Shows nothing before the details
- * are complete.
- */
 export const AccountLookupStatus = ({
   isChecking,
   verifiedName,

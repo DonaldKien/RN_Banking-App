@@ -1,15 +1,7 @@
 /**
- * A drop-in replacement for `fetch` that serves the dummy API endpoints from
- * memory, in the spirit of Mock Service Worker. The HTTP client builds real
- * requests (method, URL, headers, JSON body); this transport answers them with
- * real `Response` objects, so the client code is identical to production.
- *
- * Network conditions are simulated here, at the transport level, driven by
- * the `X-Mock-Scenario` request header:
- * - `network_error`: the request never reaches the server and `fetch` rejects,
- *   as it does when offline.
- * - `timeout`: the server processes the request but never responds, so the
- *   client's deadline aborts it.
+ * Drop-in `fetch` that serves the dummy API from memory with real `Response`s.
+ * `X-Mock-Scenario` simulates `network_error` (fetch rejects) and `timeout`
+ * (processed, but no response arrives).
  */
 import { isApiError, type ApiErrorCode } from "@/services/api/errors";
 import type { ErrorBody } from "@/services/http/http-client";
@@ -39,7 +31,6 @@ const abortError = (): Error => {
   return error;
 };
 
-/** Resolves after `ms`, or rejects early if the request is aborted. */
 const wait = (ms: number, signal?: AbortSignal | null): Promise<void> => {
   return new Promise((resolve, reject) => {
     if (signal?.aborted) return reject(abortError());
@@ -51,7 +42,6 @@ const wait = (ms: number, signal?: AbortSignal | null): Promise<void> => {
   });
 };
 
-/** Never resolves; rejects when the client aborts the request. */
 const waitForAbort = (signal?: AbortSignal | null): Promise<never> => {
   return new Promise((_, reject) => {
     if (signal?.aborted) return reject(abortError());
@@ -71,7 +61,7 @@ const errorResponse = (code: ApiErrorCode, message: string, details: Record<stri
   return json(STATUS_BY_CODE[code], body);
 };
 
-/** Parses `a=1&b=x%20y` by hand: React Native's URL polyfill lacks searchParams. */
+// By hand: React Native's URL polyfill lacks searchParams.
 const parseQuery = (queryString: string): Record<string, string> => {
   const query: Record<string, string> = {};
   for (const pair of queryString.split("&")) {
@@ -82,7 +72,6 @@ const parseQuery = (queryString: string): Record<string, string> => {
   return query;
 };
 
-/** Header names are case-insensitive; the `Headers` class lower-cases them for us. */
 const normaliseHeaders = (headers: HeadersInit | undefined): Record<string, string> => {
   const result: Record<string, string> = {};
   new Headers(headers).forEach((value, key) => {
@@ -113,7 +102,6 @@ const matchRoute = (method: string, path: string): { route: MockRoute; params: R
 
 export const mockFetch = async (input: string, init: RequestInit = {}): Promise<Response> => {
   const method = (init.method ?? "GET").toUpperCase();
-  // Strip the scheme and host: every request to the dummy API host lands here.
   const [path, queryString = ""] = input.replace(/^https?:\/\/[^/]+/, "").split("?");
   const headers = normaliseHeaders(init.headers);
   const scenario = headers["x-mock-scenario"];
@@ -128,7 +116,7 @@ export const mockFetch = async (input: string, init: RequestInit = {}): Promise<
   await wait(min + Math.random() * (max - min), init.signal);
 
   if (scenario === "network_error") {
-    // Same failure React Native's fetch reports when the device is offline.
+    // What React Native's fetch throws when offline.
     throw new TypeError("Network request failed");
   }
 
@@ -137,7 +125,6 @@ export const mockFetch = async (input: string, init: RequestInit = {}): Promise<
     try {
       body = JSON.parse(init.body);
     } catch {
-      // A real server answers malformed JSON with 400, not a dropped connection.
       return errorResponse("BAD_REQUEST", "The request body is not valid JSON.");
     }
   }
@@ -162,7 +149,7 @@ export const mockFetch = async (input: string, init: RequestInit = {}): Promise<
   }
 
   if (scenario === "timeout") {
-    // The server has processed the request, but the response never arrives.
+    // Processed, but the response never arrives.
     return waitForAbort(init.signal);
   }
   return response;

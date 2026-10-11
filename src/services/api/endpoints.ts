@@ -1,11 +1,4 @@
-/**
- * Every API endpoint path in one place. Used by the API functions
- * (`bank-api.ts`) to build requests and by the mock server to register its
- * routes, so the two can never drift apart.
- *
- * Paths are relative to `API_BASE_URL`. Path parameters use the `:name`
- * placeholder syntax; fill them in with `buildPath`.
- */
+// Shared by bank-api.ts and the mock server's routes, so they can't drift apart.
 export const API_ENDPOINTS = {
   account: "/v1/accounts/me",
   recipients: "/v1/recipients",
@@ -15,16 +8,13 @@ export const API_ENDPOINTS = {
   transactionDetail: "/v1/transactions/:id",
   verifyPin: "/v1/auth/pin/verify",
   transfers: "/v1/transfers",
-  /** Mock-only: restores the seed data. */
+  /** Mock-only. */
   demoReset: "/v1/demo/reset",
 } as const;
 
 export type ApiEndpoint = (typeof API_ENDPOINTS)[keyof typeof API_ENDPOINTS];
 
-/**
- * Replaces `:name` placeholders with URL-encoded values, e.g.
- * `buildPath(API_ENDPOINTS.transactionDetail, { id: "txn_1" })` → `"/v1/transactions/txn_1"`.
- */
+/** `buildPath(API_ENDPOINTS.transactionDetail, { id: "txn_1" })` → `"/v1/transactions/txn_1"`. */
 export const buildPath = (pattern: ApiEndpoint, params: Record<string, string>): string => {
   return pattern.replace(/:(\w+)/g, (_, name: string) => {
     const value = params[name];

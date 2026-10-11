@@ -1,48 +1,21 @@
 /**
- * A small HTTP client for talking to a JSON API, built on top of `fetch`.
- *
- * What it does for every request:
- *   1. Builds the full URL (base URL + path + query string).
- *   2. Adds JSON headers and turns the body into a JSON string.
- *   3. Starts a timer, and cancels the request if it takes too long.
- *   4. Sends the request.
- *   5. Reads the response, and turns any failure into a typed `ApiError`.
- *
- * How failures are reported:
- *   - The server answered with an error status (4xx/5xx)
- *       → `ApiError` with the code from the server's error body.
- *   - The request took longer than the timeout
- *       → `ApiError` with code `TIMEOUT`.
- *   - The request never reached the server (offline, DNS, TLS, ...)
- *       → `ApiError` with code `NETWORK_ERROR`.
- *
- * The `fetch` function is passed in rather than imported, so the same client
- * can talk to a real backend or to the in-app mock server.
+ * JSON-over-HTTP client built on `fetch`. Every failure becomes a typed `ApiError`.
+ * `fetch` is injected so the same client can hit a real backend or the mock server.
  */
 import { ApiError, type ApiErrorCode } from "@/services/api/errors";
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-/** Anything with the same shape as the global `fetch` function. */
 export type FetchLike = (input: string, init: RequestInit) => Promise<Response>;
 
-/** Values allowed in a query string. Empty values (`null`, `undefined`, `""`) are left out. */
 type QueryValue = string | number | boolean | null | undefined;
 
 export interface RequestOptions {
-  /** Query string parameters, e.g. `{ limit: 30 }` becomes `?limit=30`. */
   query?: Record<string, QueryValue>;
-  /** Request body. It is sent as JSON. */
   body?: unknown;
-  /** Extra headers, e.g. `{ "Idempotency-Key": "..." }`. */
   headers?: Record<string, string>;
-  /** Cancel the request and fail with `TIMEOUT` after this many milliseconds. */
+  /** Abort and fail with `TIMEOUT` after this many ms. */
   timeoutMs?: number;
 }
 
-/** The shape of an error response body sent by the server. */
 export interface ErrorBody {
   error?: {
     code?: string;
@@ -51,33 +24,15 @@ export interface ErrorBody {
   };
 }
 
-// ---------------------------------------------------------------------------
-// Settings
-// ---------------------------------------------------------------------------
-
-/** How long a request may take before it is cancelled, unless the caller says otherwise. */
 const DEFAULT_TIMEOUT_MS = 10_000;
-
-/** The HTTP status for "No Content": a success response with no body to read. */
 const HTTP_NO_CONTENT = 204;
-
-/** Status codes from 500 upwards mean the server itself failed. */
 const FIRST_SERVER_ERROR_STATUS = 500;
-
-// ---------------------------------------------------------------------------
-// Step 1: build the URL
-// ---------------------------------------------------------------------------
 
 const isEmptyQueryValue = (value: QueryValue): boolean => {
   return value === undefined || value === null || value === "";
 };
 
-/**
- * Turns `{ limit: 30, filter: "a b", cursor: null }` into `?limit=30&filter=a%20b`.
- *
- * Built by hand rather than with `URLSearchParams`, because React Native's
- * built-in URL support is incomplete.
- */
+// Built by hand: React Native's URLSearchParams support is incomplete.
 const buildQueryString = (query: Record<string, QueryValue> = {}): string => {
   const parts: string[] = [];
 
@@ -94,22 +49,13 @@ const buildUrl = (baseUrl: string, path: string, query?: Record<string, QueryVal
   return `${baseUrl}${path}${buildQueryString(query)}`;
 };
 
-// ---------------------------------------------------------------------------
-// Step 2: build the headers and body
-// ---------------------------------------------------------------------------
-
 const buildHeaders = (hasBody: boolean, extraHeaders: Record<string, string> = {}): Record<string, string> => {
-  const headers: Record<string, string> = {
-    // We always want JSON back.
-    Accept: "application/json",
-  };
+  const headers: Record<string, string> = { Accept: "application/json" };
 
-  // Only say we are sending JSON when there is actually a body.
   if (hasBody) {
     headers["Content-Type"] = "application/json";
   }
 
-  // Caller-supplied headers go last so they can override the defaults.
   return { ...headers, ...extraHeaders };
 };
 
@@ -118,18 +64,6 @@ const buildBody = (body: unknown): string | undefined => {
   return JSON.stringify(body);
 };
 
-// ---------------------------------------------------------------------------
-// Step 3: the timeout timer
-// ---------------------------------------------------------------------------
-
-/**
- * Starts a timer that cancels the request after `timeoutMs`.
- *
- * Returns:
- * - `signal`: pass this to `fetch` so the request can be cancelled.
- * - `hasTimedOut()`: tells us afterwards whether the timer cancelled it.
- * - `stop()`: call this once the request finishes, so the timer doesn't fire later.
- */
 const startTimeoutTimer = (timeoutMs: number) => {
   const controller = new AbortController();
   let timedOut = false;
@@ -146,24 +80,17 @@ const startTimeoutTimer = (timeoutMs: number) => {
   };
 };
 
-// ---------------------------------------------------------------------------
-// Step 5: turn a failed response into an ApiError
-// ---------------------------------------------------------------------------
-
-/** Reads the server's error body. Returns `null` if the body isn't valid JSON (e.g. an HTML error page). */
 const readErrorBody = async (response: Response): Promise<ErrorBody | null> => {
   try {
     return (await response.json()) as ErrorBody;
   } catch {
-    return null;
+    return null; // e.g. an HTML error page from a proxy
   }
 };
 
 const toApiError = async (response: Response): Promise<ApiError> => {
-  const errorBody = await readErrorBody(response);
-  const serverError = errorBody?.error;
+  const serverError = (await readErrorBody(response))?.error;
 
-  // Best case: the server told us exactly what went wrong.
   if (serverError?.code) {
     const code = serverError.code as ApiErrorCode;
     const message = serverError.message ?? "Request failed.";
@@ -171,19 +98,12 @@ const toApiError = async (response: Response): Promise<ApiError> => {
     return new ApiError(code, message, details);
   }
 
-  // Otherwise, fall back to a general error based on the status code.
-  const isServerFailure = response.status >= FIRST_SERVER_ERROR_STATUS;
-  if (isServerFailure) {
+  if (response.status >= FIRST_SERVER_ERROR_STATUS) {
     return new ApiError("SERVER_ERROR", `The server responded with ${response.status}.`);
   }
   return new ApiError("BAD_REQUEST", `Unexpected response (${response.status}).`);
 };
 
-/**
- * Reads a successful response as JSON. If the server sent something that isn't
- * JSON (e.g. a proxy's HTML page with status 200), report a typed error
- * instead of letting a raw `SyntaxError` escape.
- */
 const readSuccessBody = async <T>(response: Response): Promise<T> => {
   try {
     return (await response.json()) as T;
@@ -192,35 +112,21 @@ const readSuccessBody = async <T>(response: Response): Promise<T> => {
   }
 };
 
-// ---------------------------------------------------------------------------
-// The client
-// ---------------------------------------------------------------------------
-
 export const createHttpClient = ({ baseUrl, fetch }: { baseUrl: string; fetch: FetchLike }) => {
-  /**
-   * Sends one request and returns the parsed JSON response.
-   * Throws an `ApiError` if anything goes wrong.
-   */
   const request = async <T>(method: string, path: string, options: RequestOptions = {}): Promise<T> => {
     const { query, body, headers, timeoutMs = DEFAULT_TIMEOUT_MS } = options;
-    const hasBody = body !== undefined;
-
-    // Steps 1–3: prepare the request and start the timeout timer.
-    const url = buildUrl(baseUrl, path, query);
     const timer = startTimeoutTimer(timeoutMs);
 
-    // Step 4: send it.
     let response: Response;
     try {
-      response = await fetch(url, {
+      response = await fetch(buildUrl(baseUrl, path, query), {
         method,
-        headers: buildHeaders(hasBody, headers),
+        headers: buildHeaders(body !== undefined, headers),
         body: buildBody(body),
         signal: timer.signal,
       });
     } catch {
-      // `fetch` only throws when no response arrived at all:
-      // either our timer cancelled the request, or the network failed.
+      // fetch only throws when no response arrived: our timeout, or the network.
       if (timer.hasTimedOut()) {
         throw new ApiError("TIMEOUT", "The request timed out.");
       }
@@ -229,7 +135,6 @@ export const createHttpClient = ({ baseUrl, fetch }: { baseUrl: string; fetch: F
       timer.stop();
     }
 
-    // Step 5: read the response.
     if (!response.ok) {
       throw await toApiError(response);
     }

@@ -11,10 +11,6 @@ import { CURRENCY_SYMBOL, formatMoney, ringgit, senToAmountText, type Sen } from
 
 const QUICK_AMOUNTS: readonly Sen[] = [ringgit(50), ringgit(100), ringgit(200), ringgit(500)];
 
-/**
- * Large amount entry with quick-pick chips and a live "balance after"
- * preview, so users see the impact of the transfer before they continue.
- */
 export const AmountInput = ({
   value,
   onChangeText,

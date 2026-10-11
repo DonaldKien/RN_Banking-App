@@ -1,15 +1,4 @@
-/**
- * Form rules for adding a new recipient, written as a Zod schema.
- *
- * The form always has all four fields, but which ones are checked depends on
- * the recipient type:
- *   - Bank account → a bank must be chosen and the account number must be valid.
- *   - Mobile number (DuitNow) → the mobile number must be a Malaysian mobile.
- *
- * When the values are valid, the schema also converts them into the request
- * the name-enquiry API expects (`AccountLookupRequest`), so the screen never
- * has to do that conversion itself.
- */
+/** New-recipient form rules. Valid values are transformed into the name-enquiry request. */
 import { z } from "zod";
 
 import {
@@ -35,7 +24,7 @@ export const newRecipientSchema = z
     accountNumber: z.string(),
     mobile: z.string(),
   })
-  // Check only the fields that matter for the chosen recipient type.
+  // Only the fields for the chosen recipient type are checked.
   .superRefine((values, ctx) => {
     if (values.type === "BANK_ACCOUNT") {
       if (!values.bankCode) {
@@ -55,16 +44,14 @@ export const newRecipientSchema = z
       ctx.addIssue({ code: "custom", path: ["mobile"], message: NEW_RECIPIENT_MESSAGES.mobileInvalid });
     }
   })
-  // Valid values → the name-enquiry request.
   .transform((values): AccountLookupRequest => {
     if (values.type === "BANK_ACCOUNT") {
       return { type: values.type, bankCode: values.bankCode, accountId: digitsOnly(values.accountNumber) };
     }
-    // Safe: the check above guarantees this is a valid mobile number.
+    // Safe: validated above.
     return { type: values.type, accountId: normaliseMalaysianMobile(values.mobile) as string };
   });
 
-/** What the form holds while the user is typing. */
 export type NewRecipientFormValues = z.input<typeof newRecipientSchema>;
 
 export const NEW_RECIPIENT_DEFAULTS: NewRecipientFormValues = {
@@ -74,19 +61,12 @@ export const NEW_RECIPIENT_DEFAULTS: NewRecipientFormValues = {
   mobile: "",
 };
 
-/**
- * Returns the lookup request if the current values are valid, otherwise `null`.
- * Used to start the name enquiry live, while the user is still typing.
- */
+/** The lookup request, or `null` while the values are incomplete. */
 export const toLookupRequest = (values: unknown): AccountLookupRequest | null => {
   const result = newRecipientSchema.safeParse(values);
   return result.success ? result.data : null;
 };
 
-/**
- * Builds the recipient to send money to, from the validated details and the
- * name the bank confirmed.
- */
 export const toRecipient = (request: AccountLookupRequest, verifiedName: string): Recipient => {
   const bankName =
     request.type === "DUITNOW_MOBILE" ? DUITNOW_LABEL : (findBank(request.bankCode)?.shortName ?? "");

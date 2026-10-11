@@ -1,14 +1,6 @@
 /**
- * Device authentication (Face ID / Touch ID / fingerprint / device passcode).
- *
- * The rest of the app never touches `expo-local-authentication` directly: it
- * asks for the device's capability once, then calls `authenticateWithDevice`
- * and receives a small, UI-friendly outcome union.
- *
- * Fallback strategy, in order of preference:
- *   1. Biometrics, when hardware exists and the user has enrolled.
- *   2. The device passcode / screen lock, when set but no biometrics enrolled.
- *   3. The in-app transaction PIN (also used on web and on biometric lockout).
+ * Device authentication. Fallback order: biometrics -> device passcode ->
+ * in-app transaction PIN (also used on web and after a biometric lockout).
  */
 import {
   AuthenticationType,
@@ -28,20 +20,19 @@ export type AuthMethod = "biometric" | "device_credential" | "pin";
 
 export interface AuthCapability {
   method: AuthMethod;
-  /** Human-readable name, e.g. "Face ID", "Fingerprint", "Transaction PIN". */
+  /** e.g. "Face ID", "Fingerprint", "Transaction PIN". */
   label: string;
   icon: IconName;
-  /** Android only: whether a Class 3 (strong) biometric is enrolled. */
+  /** Android: a Class 3 (strong) biometric is enrolled. */
   strongBiometrics: boolean;
 }
 
 export type DeviceAuthOutcome =
   | { status: "success" }
-  /** The user dismissed the prompt; return quietly to the review screen. */
   | { status: "cancelled" }
-  /** Device auth can't be used right now; switch to the transaction PIN. */
+  /** Switch to the transaction PIN. */
   | { status: "fallback"; message: string }
-  /** Authentication failed but may be retried. */
+  /** May be retried. */
   | { status: "failed"; message: string };
 
 export const PIN_CAPABILITY: AuthCapability = {
@@ -63,7 +54,6 @@ const biometricLabel = (types: AuthenticationType[]): { label: string; icon: Ico
   return { label: "Biometrics", icon: "fingerprint" };
 };
 
-/** Detects the strongest authentication method this device supports right now. */
 export const getAuthCapability = async (): Promise<AuthCapability> => {
   if (Platform.OS === "web") return PIN_CAPABILITY;
 
@@ -91,12 +81,11 @@ export const getAuthCapability = async (): Promise<AuthCapability> => {
       };
     }
   } catch {
-    // Treat any capability-detection failure as "no device auth".
+    // Detection failed: fall back to the PIN.
   }
   return PIN_CAPABILITY;
 };
 
-/** Maps the library's result to the outcomes the UI cares about. */
 export const mapAuthResult = (result: LocalAuthenticationResult): DeviceAuthOutcome => {
   if (result.success) return { status: "success" };
 
@@ -128,11 +117,7 @@ export const mapAuthResult = (result: LocalAuthenticationResult): DeviceAuthOutc
   }
 };
 
-/**
- * Shows the system authentication prompt for a specific transfer.
- * The prompt text names the amount and recipient so the user knows exactly
- * what they are approving.
- */
+/** The prompt names the amount and recipient so the user knows what they approve. */
 export const authenticateWithDevice = async (
   capability: AuthCapability,
   prompt: { message: string; subtitle?: string },
@@ -146,12 +131,10 @@ export const authenticateWithDevice = async (
       promptMessage: prompt.message,
       promptSubtitle: prompt.subtitle,
       cancelLabel: "Cancel",
-      // iOS: biometrics-only policy so "Use PIN" routes to our own PIN screen
-      // instead of the device passcode. For passcode-only devices we keep the
-      // device-owner policy, which is what makes the passcode prompt appear.
+      // iOS: biometrics-only, so "Use PIN" opens our PIN rather than the device passcode.
       disableDeviceFallback: capability.method === "biometric",
       fallbackLabel: capability.method === "biometric" ? "Use PIN" : undefined,
-      // Android: require Class 3 biometrics when the device has them.
+      // Android: require Class 3 biometrics when available.
       biometricsSecurityLevel: capability.strongBiometrics ? "strong" : "weak",
       requireConfirmation: true,
     });

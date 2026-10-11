@@ -15,10 +15,7 @@ export const describeRecipient = (recipient: Recipient): string => {
     : `${recipient.bankName} · ${maskAccountNumber(recipient.accountId)}`;
 };
 
-/**
- * List row for a recipient. Memoised and given a stable `onSelect(recipient)`
- * signature so FlashList can recycle rows without re-rendering unchanged ones.
- */
+// Memoised with a stable onSelect so FlashList can recycle rows cheaply.
 export const RecipientRow = memo(({
   recipient,
   onSelect,

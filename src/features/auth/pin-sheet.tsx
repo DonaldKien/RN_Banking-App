@@ -1,7 +1,3 @@
-/**
- * In-app transaction PIN — the fallback when device authentication is
- * unavailable, locked out, declined via "Use PIN", or on web.
- */
 import { useState } from "react";
 import { Modal, StyleSheet, View } from "react-native";
 import Animated, {
@@ -32,7 +28,7 @@ export const PinSheet = ({
 }: {
   visible: boolean;
   reason: string;
-  /** Resolves when the PIN is accepted; rejects with an ApiError otherwise. */
+  /** Rejects with an ApiError for a wrong or locked PIN. */
   onSubmit: (pin: string) => Promise<void>;
   onCancel: () => void;
 }) => {
@@ -50,7 +46,7 @@ export const PinSheet = ({
     setPin("");
     setError(null);
     setVerifying(false);
-    // The server stays authoritative: a still-locked PIN is rejected again.
+    // The server still rejects a locked PIN.
     setLocked(false);
   };
 

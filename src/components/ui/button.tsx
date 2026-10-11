@@ -21,13 +21,8 @@ export interface ButtonProps {
   style?: StyleProp<ViewStyle>;
   accessibilityHint?: string;
   testID?: string;
-  /** Play a light "tick" when pressed. Defaults to `true`. */
   haptics?: boolean;
-  /**
-   * Ignore repeat taps after a press. Turn it on for buttons that send a POST
-   * request, so a double tap can't send it twice. `true` = 250 ms, a number =
-   * that many ms. Defaults to `false`.
-   */
+  /** Ignore repeat taps (`true` = 250 ms, or a number of ms). Use for POST requests. */
   throttle?: ThrottleOption;
 }
 

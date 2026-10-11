@@ -27,10 +27,6 @@ const openTransaction = (transaction: Transaction) => {
   router.push({ pathname: "/transaction/[id]", params: { id: transaction.id } });
 };
 
-/**
- * Full transaction history: ~1,500 items loaded page by page (keyset
- * pagination) and virtualised with FlashList, with sticky day headers.
- */
 const HistoryScreen = () => {
   const theme = useTheme();
   const insets = useSafeAreaInsets();

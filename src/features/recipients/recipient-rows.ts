@@ -14,16 +14,11 @@ const identity = (recipient: Recipient): string => {
 export const matchesRecipient = (recipient: Recipient, query: string): boolean => {
   if (!query) return true;
   if (normaliseSearchText(recipient.name).includes(query)) return true;
-  // Only match on numbers once enough digits are typed to be meaningful.
   const digits = query.replace(/\D/g, "");
   return digits.length >= 3 && recipient.accountId.includes(digits);
 };
 
-/**
- * Builds the flat, sectioned row list for the saved-recipients picker.
- * With a search query the sections collapse into a single de-duplicated
- * result list (recent recipients that aren't saved are included too).
- */
+/** Sectioned rows; a search collapses them into one de-duplicated result list. */
 export const buildRecipientRows = (
   saved: readonly Recipient[],
   recent: readonly Recipient[],

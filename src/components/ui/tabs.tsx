@@ -13,22 +13,15 @@ export interface TabOption<T extends string> {
 
 export interface TabsProps<T extends string> {
   options: readonly TabOption<T>[];
-  /** The currently selected tab's value. */
   value: T;
   onChange: (value: T) => void;
-  /** Play a light "tick" when the selection changes. Defaults to `true`. */
   haptics?: boolean;
 }
 
-/**
- * A row of equally sized tabs where exactly one is selected, e.g.
- * "Saved / Contacts" or "All / Sent / Received".
- */
 export const Tabs = <T extends string>({ options, value, onChange, haptics = true }: TabsProps<T>) => {
   const theme = useTheme();
 
   const select = (next: T) => {
-    // Tapping the tab that's already selected does nothing (and doesn't tick).
     if (next === value) return;
     if (haptics) hapticFeedback.selection();
     onChange(next);

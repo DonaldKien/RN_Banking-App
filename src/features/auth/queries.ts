@@ -6,11 +6,7 @@ import { useAppSelector } from "@/store";
 
 import { PIN_CAPABILITY, getAuthCapability } from "./device-auth";
 
-/**
- * The authentication method to use for the next transfer. Re-detected each
- * time the app returns to the foreground, since the user may have enrolled or
- * removed biometrics in system Settings in the meantime.
- */
+// Re-detected on foreground: biometrics may have changed in Settings.
 export const useAuthCapability = () => {
   const forcePin = useAppSelector(selectForcePinFallback);
   return useQuery({
@@ -21,7 +17,7 @@ export const useAuthCapability = () => {
   });
 };
 
-/** What the hardware actually supports, ignoring demo overrides. */
+/** Ignores demo overrides. */
 export const useDeviceAuthCapability = () => {
   return useQuery({ queryKey: queryKeys.device.authCapability, queryFn: getAuthCapability, staleTime: 0 });
 };

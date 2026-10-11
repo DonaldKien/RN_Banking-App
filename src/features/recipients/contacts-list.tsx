@@ -18,11 +18,6 @@ import {
 } from "./device-contacts";
 import { RecipientRow } from "./recipient-row";
 
-/**
- * Lets users pay someone from their address book via DuitNow. Handles every
- * permission state explicitly, including "denied permanently" (deep-links to
- * Settings) and iOS 18 limited access.
- */
 export const ContactsList = ({
   search,
   onSelect,
