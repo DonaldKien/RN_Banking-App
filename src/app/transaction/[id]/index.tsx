@@ -1,16 +1,16 @@
 import { router, useLocalSearchParams } from "expo-router";
-import { StyleSheet, View } from "react-native";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
 
 import { ThemedText } from "@/components/themed-text";
+import { Banner } from "@/components/ui/banner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { DetailRow } from "@/components/ui/detail-row";
-import { EmptyState } from "@/components/ui/empty-state";
 import { FormScreen } from "@/components/ui/form-screen";
 import { Icon } from "@/components/ui/icon";
 import { Radius } from "@/constants/theme";
-import { SAMPLE_TRANSACTIONS } from "@/constants/sample-data";
 import { describeRecipient } from "@/features/recipients/recipient-row";
+import { useTransaction } from "@/features/transactions/queries";
 import { draftStarted } from "@/features/transfer/transfer-slice";
 import { useTheme } from "@/hooks/use-theme";
 import { formatDate, formatTime } from "@/lib/format";
@@ -21,10 +21,23 @@ const TransactionDetailScreen = () => {
   const theme = useTheme();
   const dispatch = useAppDispatch();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const transaction = SAMPLE_TRANSACTIONS.find((item) => item.id === id);
+  const { data: transaction, isError, refetch } = useTransaction(id);
 
+  if (!transaction && !isError) {
+    return <ActivityIndicator style={styles.loader} color={theme.primary} />;
+  }
   if (!transaction) {
-    return <EmptyState icon="receipt" title="Transaction not found" />;
+    return (
+      <View style={styles.padded}>
+        <Banner
+          tone="danger"
+          title="Couldn't load this transaction"
+          message="It may have been removed, or you're offline."
+          actionLabel="Try again"
+          onAction={() => void refetch()}
+        />
+      </View>
+    );
   }
 
   const isCredit = transaction.direction === "credit";
@@ -82,6 +95,12 @@ const TransactionDetailScreen = () => {
 export default TransactionDetailScreen;
 
 const styles = StyleSheet.create({
+  loader: {
+    marginTop: 48,
+  },
+  padded: {
+    padding: 16,
+  },
   hero: {
     alignItems: "center",
     gap: 8,
