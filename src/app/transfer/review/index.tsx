@@ -1,9 +1,10 @@
 import { Redirect, Stack, router } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { BackHandler, StyleSheet, View } from "react-native";
 
 import { ThemedText } from "@/components/themed-text";
 import { Avatar } from "@/components/ui/avatar";
+import { Banner } from "@/components/ui/banner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { DetailRow } from "@/components/ui/detail-row";
@@ -15,41 +16,51 @@ import { PinSheet } from "@/features/auth/pin-sheet";
 import { describeRecipient } from "@/features/recipients/recipient-row";
 import { ProcessingOverlay } from "@/features/transfer/processing-overlay";
 import { selectAmountSen, selectNote, selectRecipient } from "@/features/transfer/transfer-slice";
+import { useConfirmTransfer } from "@/features/transfer/use-confirm-transfer";
 import { useTheme } from "@/hooks/use-theme";
 import { maskAccountNumber } from "@/lib/format";
 import { formatMoney } from "@/lib/money";
 import { useAppSelector } from "@/store";
 
+/** Step 2: review and approve. */
 const ReviewTransferScreen = () => {
   const theme = useTheme();
   const recipient = useAppSelector(selectRecipient);
   const amount = useAppSelector(selectAmountSen);
   const note = useAppSelector(selectNote);
   const { data: account } = useAccount();
-  const [pinVisible, setPinVisible] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
+
+  const flow = useConfirmTransfer({
+    onSuccess: (receipt) =>
+      router.replace({ pathname: "/transfer/success", params: { id: receipt.transaction.id } }),
+  });
 
   // Block Android back while the transfer is in flight.
   useEffect(() => {
-    const subscription = BackHandler.addEventListener("hardwareBackPress", () => submitting);
+    const subscription = BackHandler.addEventListener("hardwareBackPress", () => flow.busy);
     return () => subscription.remove();
-  }, [submitting]);
+  }, [flow.busy]);
 
   // e.g. opened via a deep link without a draft.
   if (!recipient || amount === null) return <Redirect href="/transfer" />;
 
-  const confirmWithPin = async (pin: string) => {
-    if (pin !== "123456") throw new Error("Incorrect PIN");
-    setPinVisible(false);
-    setSubmitting(true);
-    setTimeout(() => router.replace("/transfer/success"), 1500);
-  };
+  const { phase } = flow;
 
   return (
     <View style={styles.flex}>
-      <Stack.Screen options={{ gestureEnabled: !submitting, headerBackVisible: !submitting }} />
+      <Stack.Screen options={{ gestureEnabled: !flow.busy, headerBackVisible: !flow.busy }} />
 
-      <FormScreen footer={<Button title="Confirm" icon="lock" onPress={() => setPinVisible(true)} />}>
+      <FormScreen
+        footer={
+          <Button
+            testID="confirm-transfer"
+            title="Confirm with Transaction PIN"
+            icon="pin"
+            onPress={flow.confirm}
+            disabled={flow.busy}
+            accessibilityHint={`Sends ${formatMoney(amount)} to ${recipient.name}`}
+          />
+        }>
         <View style={styles.hero}>
           <Avatar name={recipient.name} size={64} />
           <ThemedText variant="caption" color="textSecondary">
@@ -62,6 +73,8 @@ const ReviewTransferScreen = () => {
             to <ThemedText variant="bodyStrong">{recipient.name}</ThemedText>
           </ThemedText>
         </View>
+
+        {flow.notice && phase.name === "idle" && <Banner tone="warning" message={flow.notice} />}
 
         <Card>
           <DetailRow
@@ -81,18 +94,20 @@ const ReviewTransferScreen = () => {
         <View style={[styles.security, { backgroundColor: theme.surfaceMuted }]}>
           <Icon name="shield" size={18} color={theme.primary} />
           <ThemedText variant="caption" color="textSecondary" style={styles.flex}>
-            {"You'll approve this transfer before any money is sent."}
+            {"You'll approve this transfer with your transaction PIN."}
           </ThemedText>
         </View>
       </FormScreen>
 
-      {submitting && <ProcessingOverlay message={`Sending ${formatMoney(amount)} to ${recipient.name.split(" ")[0]}…`} />}
+      {phase.name === "submitting" && (
+        <ProcessingOverlay message={`Sending ${formatMoney(amount)} to ${recipient.name.split(" ")[0]}…`} />
+      )}
 
       <PinSheet
-        visible={pinVisible}
-        reason="Enter your 6-digit transaction PIN to approve this transfer."
-        onSubmit={confirmWithPin}
-        onCancel={() => setPinVisible(false)}
+        visible={phase.name === "pin"}
+        reason={phase.name === "pin" ? phase.reason : ""}
+        onSubmit={flow.confirmWithPin}
+        onCancel={flow.dismissPin}
       />
     </View>
   );

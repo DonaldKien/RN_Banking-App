@@ -1,19 +1,20 @@
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useEffect } from "react";
-import { BackHandler, ScrollView, Share, StyleSheet, View } from "react-native";
+import { ActivityIndicator, BackHandler, ScrollView, Share, StyleSheet, View } from "react-native";
 import Animated, { FadeInDown, ZoomIn } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ThemedText } from "@/components/themed-text";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { DetailRow } from "@/components/ui/detail-row";
 import { Icon } from "@/components/ui/icon";
 import { MaxContentWidth, Radius } from "@/constants/theme";
-import { SAMPLE_TRANSACTIONS } from "@/constants/sample-data";
 import { useBalance } from "@/features/account/queries";
 import { selectBalanceHidden } from "@/features/preferences/preferences-slice";
 import { describeRecipient } from "@/features/recipients/recipient-row";
+import { useTransaction } from "@/features/transactions/queries";
 import { draftCleared, draftStarted } from "@/features/transfer/transfer-slice";
 import { useTheme } from "@/hooks/use-theme";
 import { formatDateTime } from "@/lib/format";
@@ -24,13 +25,14 @@ const goHome = () => {
   router.dismissTo("/");
 };
 
-/** Step 3: receipt. */
+/** Step 3: receipt. The transaction is read from the cache seeded by the mutation. */
 const TransferSuccessScreen = () => {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
-  const transaction = SAMPLE_TRANSACTIONS[0];
-  const { data: balance } = useBalance();
   const dispatch = useAppDispatch();
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const { data: transaction, isError } = useTransaction(id);
+  const { data: balance } = useBalance();
   const balanceHidden = useAppSelector(selectBalanceHidden);
 
   // The draft has been sent.
@@ -47,7 +49,27 @@ const TransferSuccessScreen = () => {
     return () => subscription.remove();
   }, []);
 
+  if (!transaction && !isError) {
+    return <ActivityIndicator style={styles.loader} color={theme.primary} />;
+  }
+
+  // We only get here after a successful transfer, so the money has moved even
+  // if the receipt details can't be loaded right now.
+  if (!transaction) {
+    return (
+      <View style={[styles.fallback, { paddingTop: insets.top + 32, paddingBottom: insets.bottom + 24 }]}>
+        <EmptyState
+          icon="checkCircle"
+          title="Transfer sent"
+          message="We couldn't load the receipt right now. You'll find this transfer in your history.">
+          <Button title="Done" onPress={goHome} style={styles.fallbackButton} />
+        </EmptyState>
+      </View>
+    );
+  }
+
   const share = () => {
+    if (!transaction) return;
     const lines = [
       "Transfer successful",
       `Amount: ${formatMoney(transaction.amount)}`,
@@ -124,6 +146,17 @@ const TransferSuccessScreen = () => {
 export default TransferSuccessScreen;
 
 const styles = StyleSheet.create({
+  fallback: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  fallbackButton: {
+    alignSelf: "stretch",
+    marginTop: 8,
+  },
+  loader: {
+    marginTop: 48,
+  },
   content: {
     paddingHorizontal: 16,
     alignItems: "center",
