@@ -22,7 +22,7 @@ import { maskAccountNumber } from "@/lib/format";
 import { formatMoney } from "@/lib/money";
 import { useAppSelector } from "@/store";
 
-/** Step 2: review and approve. */
+/** Step 2: confirm details, authenticate, submit. */
 const ReviewTransferScreen = () => {
   const theme = useTheme();
   const recipient = useAppSelector(selectRecipient);
@@ -35,16 +35,18 @@ const ReviewTransferScreen = () => {
       router.replace({ pathname: "/transfer/success", params: { id: receipt.transaction.id } }),
   });
 
-  // Block Android back while the transfer is in flight.
+  // Block Android hardware back while authenticating or submitting.
   useEffect(() => {
     const subscription = BackHandler.addEventListener("hardwareBackPress", () => flow.busy);
     return () => subscription.remove();
   }, [flow.busy]);
 
-  // e.g. opened via a deep link without a draft.
+  // Reached without a complete draft (e.g. via deep link): restart the flow.
   if (!recipient || amount === null) return <Redirect href="/transfer" />;
 
-  const { phase } = flow;
+  const { phase, capability } = flow;
+
+  const confirmLabel = capability ? `Confirm with ${capability.label}` : "Confirm";
 
   return (
     <View style={styles.flex}>
@@ -52,14 +54,20 @@ const ReviewTransferScreen = () => {
 
       <FormScreen
         footer={
-          <Button
-            testID="confirm-transfer"
-            title="Confirm with Transaction PIN"
-            icon="pin"
-            onPress={flow.confirm}
-            disabled={flow.busy}
-            accessibilityHint={`Sends ${formatMoney(amount)} to ${recipient.name}`}
-          />
+          <View style={styles.footer}>
+            <Button
+              testID="confirm-transfer"
+              title={phase.name === "authenticating" ? `Waiting for ${capability?.label ?? "approval"}…` : confirmLabel}
+              icon={capability?.icon ?? "lock"}
+              onPress={() => void flow.confirm()}
+              loading={flow.capabilityLoading}
+              disabled={flow.busy}
+              accessibilityHint={`Sends ${formatMoney(amount)} to ${recipient.name}`}
+            />
+            {capability && capability.method !== "pin" && (
+              <Button title="Use PIN instead" variant="ghost" size="sm" onPress={flow.switchToPin} disabled={flow.busy} />
+            )}
+          </View>
         }>
         <View style={styles.hero}>
           <Avatar name={recipient.name} size={64} />
@@ -91,12 +99,16 @@ const ReviewTransferScreen = () => {
           )}
         </Card>
 
-        <View style={[styles.security, { backgroundColor: theme.surfaceMuted }]}>
-          <Icon name="shield" size={18} color={theme.primary} />
-          <ThemedText variant="caption" color="textSecondary" style={styles.flex}>
-            {"You'll approve this transfer with your transaction PIN."}
-          </ThemedText>
-        </View>
+        {capability && (
+          <View style={[styles.security, { backgroundColor: theme.surfaceMuted }]}>
+            <Icon name="shield" size={18} color={theme.primary} />
+            <ThemedText variant="caption" color="textSecondary" style={styles.flex}>
+              {capability.method === "pin"
+                ? "You'll approve this transfer with your transaction PIN."
+                : `You'll approve this transfer with ${capability.label}. Your biometric data never leaves your device.`}
+            </ThemedText>
+          </View>
+        )}
       </FormScreen>
 
       {phase.name === "submitting" && (
@@ -118,6 +130,9 @@ export default ReviewTransferScreen;
 const styles = StyleSheet.create({
   flex: {
     flex: 1,
+  },
+  footer: {
+    gap: 4,
   },
   hero: {
     alignItems: "center",

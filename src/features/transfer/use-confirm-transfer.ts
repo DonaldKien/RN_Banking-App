@@ -1,9 +1,12 @@
 /**
- * Orchestrates "approve, then submit" for the review screen.
+ * Orchestrates "authenticate, then submit" for the review screen.
  *
  * Security properties:
- * - The submit call is only reachable from a verified PIN, so there is no
- *   code path that sends money without the user's explicit approval.
+ * - Every submission requires a fresh authentication; approvals are never
+ *   cached or reused across attempts.
+ * - The submit call is only reachable from a successful authentication
+ *   (device auth or verified PIN), so there is no code path that sends money
+ *   without the user's explicit approval.
  * - The idempotency key is fixed for the draft, so retries after a timeout
  *   can't double-charge.
  */
@@ -11,10 +14,18 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { randomUUID } from "expo-crypto";
 import { useEffect, useState } from "react";
 
+import { useAuthCapability } from "@/features/auth/queries";
+import { authenticateWithDevice, type AuthCapability } from "@/features/auth/device-auth";
 import { haptics } from "@/lib/haptics";
+import { formatMoney } from "@/lib/money";
 import { queryKeys } from "@/lib/query-keys";
 import { submitTransfer, verifyPin } from "@/services/api/bank-api";
-import type { Account, TransferAuthorization, TransferReceipt, TransferRequest } from "@/services/api/types";
+import type {
+  Account,
+  TransferAuthorization,
+  TransferReceipt,
+  TransferRequest,
+} from "@/services/api/types";
 import { useAppDispatch, useAppSelector, useAppStore } from "@/store";
 
 import {
@@ -25,7 +36,11 @@ import {
   selectRecipient,
 } from "./transfer-slice";
 
-export type ConfirmPhase = { name: "idle" } | { name: "pin"; reason: string } | { name: "submitting" };
+export type ConfirmPhase =
+  | { name: "idle" }
+  | { name: "authenticating" }
+  | { name: "pin"; reason: string }
+  | { name: "submitting" };
 
 const useSubmitTransferMutation = () => {
   const queryClient = useQueryClient();
@@ -54,10 +69,11 @@ export const useConfirmTransfer = ({ onSuccess }: { onSuccess: (receipt: Transfe
   const note = useAppSelector(selectNote);
   const idempotencyKey = useAppSelector(selectIdempotencyKey);
 
+  const capabilityQuery = useAuthCapability();
   const submitMutation = useSubmitTransferMutation();
 
   const [phase, setPhase] = useState<ConfirmPhase>({ name: "idle" });
-  /** Short, non-blocking feedback such as "PIN entry was cancelled". */
+  /** Short, non-blocking feedback such as "Authentication cancelled". */
   const [notice, setNotice] = useState<string | null>(null);
 
   // One idempotency key per draft; kept across retries, reset by any edit.
@@ -65,7 +81,7 @@ export const useConfirmTransfer = ({ onSuccess }: { onSuccess: (receipt: Transfe
     if (!idempotencyKey) dispatch(attemptPrepared(randomUUID()));
   }, [dispatch, idempotencyKey]);
 
-  const busy = phase.name === "submitting";
+  const busy = phase.name === "authenticating" || phase.name === "submitting";
 
   /**
    * The draft's idempotency key. Normally created by the effect above; if the
@@ -81,6 +97,7 @@ export const useConfirmTransfer = ({ onSuccess }: { onSuccess: (receipt: Transfe
   };
 
   const submit = async (authorization: TransferAuthorization) => {
+    // Never leave the screen stuck in "authenticating" / "pin" if the draft is incomplete.
     if (!recipient || amount === null) {
       setPhase({ name: "idle" });
       setNotice("This transfer is missing details. Go back and check the recipient and amount.");
@@ -106,10 +123,40 @@ export const useConfirmTransfer = ({ onSuccess }: { onSuccess: (receipt: Transfe
     }
   };
 
-  const confirm = () => {
-    if (busy || !recipient || amount === null) return;
+  const confirm = async () => {
+    const capability: AuthCapability | undefined = capabilityQuery.data;
+    if (busy || !capability || !recipient || amount === null) return;
     setNotice(null);
-    setPhase({ name: "pin", reason: "Enter your 6-digit transaction PIN to approve this transfer." });
+
+    if (capability.method === "pin") {
+      setPhase({ name: "pin", reason: "Enter your 6-digit transaction PIN to approve this transfer." });
+      return;
+    }
+
+    setPhase({ name: "authenticating" });
+    const outcome = await authenticateWithDevice(capability, {
+      message: `Send ${formatMoney(amount)}`,
+      subtitle: `to ${recipient.name}`,
+    });
+
+    switch (outcome.status) {
+      case "success":
+        // Production: this would be a server challenge signed by a biometric-bound key.
+        await submit({ method: capability.method, assertion: `${capability.method}:${Date.now()}` });
+        break;
+      case "cancelled":
+        setPhase({ name: "idle" });
+        setNotice("Transfer not sent — authentication was cancelled.");
+        break;
+      case "fallback":
+        setPhase({ name: "pin", reason: outcome.message });
+        break;
+      case "failed":
+        haptics.error();
+        setPhase({ name: "idle" });
+        setNotice(outcome.message);
+        break;
+    }
   };
 
   /**
@@ -122,6 +169,11 @@ export const useConfirmTransfer = ({ onSuccess }: { onSuccess: (receipt: Transfe
     await submit({ method: "pin", token });
   };
 
+  const switchToPin = () => {
+    setNotice(null);
+    setPhase({ name: "pin", reason: "Enter your 6-digit transaction PIN to approve this transfer." });
+  };
+
   const dismissPin = () => {
     setPhase({ name: "idle" });
     setNotice("Transfer not sent — PIN entry was cancelled.");
@@ -131,8 +183,11 @@ export const useConfirmTransfer = ({ onSuccess }: { onSuccess: (receipt: Transfe
     phase,
     notice,
     busy,
+    capability: capabilityQuery.data,
+    capabilityLoading: capabilityQuery.isPending,
     confirm,
     confirmWithPin,
+    switchToPin,
     dismissPin,
   };
 };

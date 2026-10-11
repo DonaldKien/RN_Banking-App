@@ -17,10 +17,10 @@ import { Icon } from "@/components/ui/icon";
 import { Radius } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 import { haptics } from "@/lib/haptics";
+import { DEMO_PIN } from "@/services/mock-server/db";
+import { isApiError } from "@/services/api/errors";
 
 const PIN_LENGTH = 6;
-// Placeholder until the PIN is verified by the bank.
-const DEMO_PIN = "123456";
 const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "back"] as const;
 
 export const PinSheet = ({
@@ -31,7 +31,7 @@ export const PinSheet = ({
 }: {
   visible: boolean;
   reason: string;
-  /** Resolves when the PIN is accepted; rejects otherwise. */
+  /** Resolves when the PIN is accepted; rejects with an ApiError otherwise. */
   onSubmit: (pin: string) => Promise<void>;
   onCancel: () => void;
 }) => {
@@ -40,6 +40,7 @@ export const PinSheet = ({
   const [pin, setPin] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [verifying, setVerifying] = useState(false);
+  const [locked, setLocked] = useState(false);
 
   const shake = useSharedValue(0);
   const dotsStyle = useAnimatedStyle(() => ({ transform: [{ translateX: shake.get() }] }));
@@ -48,6 +49,8 @@ export const PinSheet = ({
     setPin("");
     setError(null);
     setVerifying(false);
+    // The server stays authoritative: a still-locked PIN is rejected again.
+    setLocked(false);
   };
 
   const submit = async (fullPin: string) => {
@@ -55,7 +58,7 @@ export const PinSheet = ({
     try {
       await onSubmit(fullPin);
       reset();
-    } catch {
+    } catch (err) {
       haptics.error();
       shake.set(
         withSequence(
@@ -67,12 +70,20 @@ export const PinSheet = ({
       );
       setPin("");
       setVerifying(false);
-      setError("Incorrect PIN. Please try again.");
+      if (isApiError(err) && err.code === "PIN_LOCKED") {
+        setLocked(true);
+        setError("Your PIN is locked after too many attempts. Reset it from the demo controls.");
+      } else if (isApiError(err) && err.code === "INVALID_PIN") {
+        const left = err.details.attemptsRemaining;
+        setError(`Incorrect PIN. ${String(left)} attempt${left === 1 ? "" : "s"} left.`);
+      } else {
+        setError(isApiError(err) ? err.message : "We couldn't verify your PIN. Please try again.");
+      }
     }
   };
 
   const press = (key: (typeof KEYS)[number]) => {
-    if (verifying) return;
+    if (verifying || locked) return;
     haptics.selection();
     if (key === "back") {
       setPin((p) => p.slice(0, -1));
@@ -152,12 +163,12 @@ export const PinSheet = ({
                   key={index}
                   accessibilityRole="button"
                   accessibilityLabel={key === "back" ? "Delete" : key}
-                  disabled={verifying}
+                  disabled={verifying || locked}
                   onPress={() => press(key)}
                   style={({ pressed }) => [
                     styles.key,
                     pressed && { backgroundColor: theme.surfaceMuted },
-                    (verifying) && styles.keyDisabled,
+                    (verifying || locked) && styles.keyDisabled,
                   ]}>
                   {key === "back" ? (
                     <Icon name="backspace" size={24} color={theme.text} />
