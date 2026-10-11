@@ -2,13 +2,6 @@
 import { ringgit } from "@/lib/money";
 import type { Recipient, Transaction } from "@/services/api/types";
 
-export const SAMPLE_ACCOUNT = {
-  holderName: "Aisyah Rahman",
-  productName: "Savings Account",
-  accountNumber: "8812345678",
-  balance: ringgit(12_480.5),
-};
-
 export const SAMPLE_RECIPIENTS: Recipient[] = [
   { id: "r1", name: "Wei Jie Tan", type: "BANK_ACCOUNT", accountId: "5123456789", bankCode: "MBB", bankName: "Maybank", isFavourite: true },
   { id: "r2", name: "Priya Raman", type: "DUITNOW_MOBILE", accountId: "60123456789", bankName: "DuitNow · Mobile" },

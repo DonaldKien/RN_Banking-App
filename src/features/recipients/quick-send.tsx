@@ -3,10 +3,12 @@ import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { ThemedText } from "@/components/themed-text";
 import { Avatar } from "@/components/ui/avatar";
 import { Icon } from "@/components/ui/icon";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Radius } from "@/constants/theme";
-import { SAMPLE_RECIPIENTS } from "@/constants/sample-data";
 import { useTheme } from "@/hooks/use-theme";
 import type { Recipient } from "@/services/api/types";
+
+import { useRecentRecipients } from "./queries";
 
 const ITEM_WIDTH = 72;
 
@@ -23,7 +25,10 @@ export const QuickSend = ({
   onNew: () => void;
 }) => {
   const theme = useTheme();
-  const recipients = SAMPLE_RECIPIENTS;
+  const { data: recipients, isError } = useRecentRecipients();
+
+  // Hide the strip only if it failed and there is nothing cached to show.
+  if (isError && !recipients) return null;
 
   return (
     <ScrollView
@@ -44,19 +49,26 @@ export const QuickSend = ({
         </ThemedText>
       </Pressable>
 
-      {recipients.map((recipient) => (
-        <Pressable
-          key={recipient.id}
-          accessibilityRole="button"
-          accessibilityLabel={`Send to ${recipient.name}`}
-          onPress={() => onSelect(recipient)}
-          style={({ pressed }) => [styles.item, pressed && styles.pressed]}>
-          <Avatar name={recipient.name} size={52} />
-          <ThemedText variant="caption" numberOfLines={1} align="center">
-            {recipient.name.split(" ")[0]}
-          </ThemedText>
-        </Pressable>
-      ))}
+      {!recipients
+        ? Array.from({ length: 4 }, (_, i) => (
+            <View key={i} style={styles.item}>
+              <Skeleton width={52} height={52} radius={26} />
+              <Skeleton width={48} height={12} />
+            </View>
+          ))
+        : recipients.map((recipient) => (
+            <Pressable
+              key={recipient.id}
+              accessibilityRole="button"
+              accessibilityLabel={`Send to ${recipient.name}`}
+              onPress={() => onSelect(recipient)}
+              style={({ pressed }) => [styles.item, pressed && styles.pressed]}>
+              <Avatar name={recipient.name} size={52} />
+              <ThemedText variant="caption" numberOfLines={1} align="center">
+                {recipient.name.split(" ")[0]}
+              </ThemedText>
+            </Pressable>
+          ))}
     </ScrollView>
   );
 };

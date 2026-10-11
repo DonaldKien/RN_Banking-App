@@ -3,7 +3,7 @@ import { router } from "expo-router";
 import { Button } from "@/components/ui/button";
 import { FormScreen } from "@/components/ui/form-screen";
 import { TextField } from "@/components/ui/text-field";
-import { SAMPLE_ACCOUNT } from "@/constants/sample-data";
+import { useAccount } from "@/features/account/queries";
 import { AmountInput } from "@/features/transfer/amount-input";
 import { RecipientField } from "@/features/transfer/recipient-field";
 import {
@@ -24,6 +24,7 @@ const TransferFormScreen = () => {
   const amountText = useAppSelector(selectAmountText);
   const amount = useAppSelector(selectAmountSen);
   const note = useAppSelector(selectNote);
+  const account = useAccount();
 
   const review = () => {
     router.push("/transfer/review");
@@ -37,7 +38,7 @@ const TransferFormScreen = () => {
         value={amountText}
         onChangeText={(text) => dispatch(amountChanged(text))}
         amount={amount}
-        balance={SAMPLE_ACCOUNT.balance}
+        balance={account.data?.balance}
       />
 
       <TextField

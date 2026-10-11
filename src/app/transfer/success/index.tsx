@@ -10,7 +10,8 @@ import { Card } from "@/components/ui/card";
 import { DetailRow } from "@/components/ui/detail-row";
 import { Icon } from "@/components/ui/icon";
 import { MaxContentWidth, Radius } from "@/constants/theme";
-import { SAMPLE_ACCOUNT, SAMPLE_TRANSACTIONS } from "@/constants/sample-data";
+import { SAMPLE_TRANSACTIONS } from "@/constants/sample-data";
+import { useBalance } from "@/features/account/queries";
 import { selectBalanceHidden } from "@/features/preferences/preferences-slice";
 import { describeRecipient } from "@/features/recipients/recipient-row";
 import { draftCleared, draftStarted } from "@/features/transfer/transfer-slice";
@@ -28,7 +29,7 @@ const TransferSuccessScreen = () => {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const transaction = SAMPLE_TRANSACTIONS[0];
-  const balance = SAMPLE_ACCOUNT.balance;
+  const { data: balance } = useBalance();
   const dispatch = useAppDispatch();
   const balanceHidden = useAppSelector(selectBalanceHidden);
 
@@ -100,11 +101,13 @@ const TransferSuccessScreen = () => {
             <DetailRow label="Date & time" value={formatDateTime(transaction.createdAt)} />
             {transaction.note && <DetailRow label="Note" value={transaction.note} />}
             <DetailRow label="Reference" value={transaction.reference} mono />
-            <DetailRow
-              label="Available balance"
-              value={balanceHidden ? "RM ••••••" : formatMoney(balance)}
-              valueColor="textSecondary"
-            />
+            {balance !== undefined && (
+              <DetailRow
+                label="Available balance"
+                value={balanceHidden ? "RM ••••••" : formatMoney(balance)}
+                valueColor="textSecondary"
+              />
+            )}
           </Card>
         </Animated.View>
 

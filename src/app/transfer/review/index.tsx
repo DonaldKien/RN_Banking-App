@@ -10,7 +10,7 @@ import { DetailRow } from "@/components/ui/detail-row";
 import { FormScreen } from "@/components/ui/form-screen";
 import { Icon } from "@/components/ui/icon";
 import { Radius } from "@/constants/theme";
-import { SAMPLE_ACCOUNT } from "@/constants/sample-data";
+import { useAccount } from "@/features/account/queries";
 import { PinSheet } from "@/features/auth/pin-sheet";
 import { describeRecipient } from "@/features/recipients/recipient-row";
 import { ProcessingOverlay } from "@/features/transfer/processing-overlay";
@@ -22,10 +22,10 @@ import { useAppSelector } from "@/store";
 
 const ReviewTransferScreen = () => {
   const theme = useTheme();
-  const account = SAMPLE_ACCOUNT;
   const recipient = useAppSelector(selectRecipient);
   const amount = useAppSelector(selectAmountSen);
   const note = useAppSelector(selectNote);
+  const { data: account } = useAccount();
   const [pinVisible, setPinVisible] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -64,12 +64,18 @@ const ReviewTransferScreen = () => {
         </View>
 
         <Card>
-          <DetailRow label="From" value={account.productName} secondary={maskAccountNumber(account.accountNumber)} />
+          <DetailRow
+            label="From"
+            value={account?.productName ?? "Savings"}
+            secondary={account ? maskAccountNumber(account.accountNumber) : undefined}
+          />
           <DetailRow label="To" value={recipient.name} secondary={describeRecipient(recipient)} />
           <DetailRow label="Amount" value={formatMoney(amount)} />
           <DetailRow label="Fee" value="Free" valueColor="success" />
           {note.trim() !== "" && <DetailRow label="Note" value={note.trim()} />}
-          <DetailRow label="Balance after" value={formatMoney(account.balance - amount)} valueColor="textSecondary" />
+          {account && (
+            <DetailRow label="Balance after" value={formatMoney(account.balance - amount)} valueColor="textSecondary" />
+          )}
         </Card>
 
         <View style={[styles.security, { backgroundColor: theme.surfaceMuted }]}>

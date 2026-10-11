@@ -1,16 +1,19 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Provider as ReduxProvider } from "react-redux";
 
 import { useIsDark, useTheme } from "@/hooks/use-theme";
+import { createQueryClient, subscribeAppFocus } from "@/lib/query-client";
 import { store } from "@/store";
 
 const RootLayout = () => {
   // Created once per app instance (not at module scope) so tests and fast
   // refresh get a clean cache.
-  const [queryClient] = useState(() => new QueryClient());
+  const [queryClient] = useState(createQueryClient);
+
+  useEffect(() => subscribeAppFocus(), []);
 
   return (
     <ReduxProvider store={store}>
