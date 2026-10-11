@@ -1,11 +1,13 @@
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import { useDispatch, useSelector, useStore } from "react-redux";
 
+import demoReducer from "@/features/demo/demo-slice";
 import preferencesReducer from "@/features/preferences/preferences-slice";
 import transferReducer from "@/features/transfer/transfer-slice";
 
 const rootReducer = combineReducers({
   transfer: transferReducer,
+  demo: demoReducer,
   preferences: preferencesReducer,
 });
 

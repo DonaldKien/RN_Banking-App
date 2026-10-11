@@ -16,6 +16,7 @@ import { useEffect, useState } from "react";
 
 import { useAuthCapability } from "@/features/auth/queries";
 import { authenticateWithDevice, type AuthCapability } from "@/features/auth/device-auth";
+import { scenarioConsumed, selectTransferScenario } from "@/features/demo/demo-slice";
 import { haptics } from "@/lib/haptics";
 import { formatMoney } from "@/lib/money";
 import { queryKeys } from "@/lib/query-keys";
@@ -23,6 +24,7 @@ import { submitTransfer, verifyPin } from "@/services/api/bank-api";
 import { isApiError } from "@/services/api/errors";
 import type {
   Account,
+  MockScenario,
   TransferAuthorization,
   TransferReceipt,
   TransferRequest,
@@ -47,9 +49,11 @@ export type ConfirmPhase =
 
 const useSubmitTransferMutation = () => {
   const queryClient = useQueryClient();
+  const dispatch = useAppDispatch();
 
   return useMutation({
-    mutationFn: (request: TransferRequest) => submitTransfer(request),
+    mutationFn: ({ request, scenario }: { request: TransferRequest; scenario: MockScenario }) =>
+      submitTransfer(request, { scenario }),
     onSuccess: (receipt) => {
       // Seed caches with server-confirmed data so the receipt and the new
       // balance render immediately, then refresh everything that changed.
@@ -77,6 +81,9 @@ const useSubmitTransferMutation = () => {
         void queryClient.invalidateQueries({ queryKey: queryKeys.transactions.all });
         void queryClient.invalidateQueries({ queryKey: queryKeys.recipients.recent });
       }
+    },
+    onSettled: () => {
+      dispatch(scenarioConsumed());
     },
   });
 };
@@ -128,11 +135,9 @@ export const useConfirmTransfer = ({ onSuccess }: { onSuccess: (receipt: Transfe
     setPhase({ name: "submitting" });
     try {
       const receipt = await submitMutation.mutateAsync({
-        idempotencyKey,
-        recipient,
-        amount,
-        note: note.trim() || undefined,
-        authorization,
+        request: { idempotencyKey, recipient, amount, note: note.trim() || undefined, authorization },
+        // Read at call time so the latest demo setting applies.
+        scenario: selectTransferScenario(store.getState()),
       });
       haptics.success();
       onSuccess(receipt);
