@@ -20,6 +20,7 @@ import { haptics } from "@/lib/haptics";
 import { formatMoney } from "@/lib/money";
 import { queryKeys } from "@/lib/query-keys";
 import { submitTransfer, verifyPin } from "@/services/api/bank-api";
+import { isApiError } from "@/services/api/errors";
 import type {
   Account,
   TransferAuthorization,
@@ -28,6 +29,7 @@ import type {
 } from "@/services/api/types";
 import { useAppDispatch, useAppSelector, useAppStore } from "@/store";
 
+import { describeTransferError, type TransferErrorDescription } from "./transfer-errors";
 import {
   attemptPrepared,
   selectAmountSen,
@@ -40,7 +42,8 @@ export type ConfirmPhase =
   | { name: "idle" }
   | { name: "authenticating" }
   | { name: "pin"; reason: string }
-  | { name: "submitting" };
+  | { name: "submitting" }
+  | { name: "failed"; error: TransferErrorDescription };
 
 const useSubmitTransferMutation = () => {
   const queryClient = useQueryClient();
@@ -57,6 +60,23 @@ const useSubmitTransferMutation = () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.account });
       void queryClient.invalidateQueries({ queryKey: queryKeys.transactions.all });
       void queryClient.invalidateQueries({ queryKey: queryKeys.recipients.recent });
+    },
+    onError: (error) => {
+      if (!isApiError(error)) return;
+
+      // The balance we validated against was out of date; fetch the real one.
+      if (error.code === "INSUFFICIENT_FUNDS" || error.code === "DAILY_LIMIT_EXCEEDED") {
+        void queryClient.invalidateQueries({ queryKey: queryKeys.account });
+      }
+
+      // A timeout means we don't know whether the transfer went through: the
+      // server may have processed it. Refresh everything a transfer changes,
+      // so the balance and history are right even if the user doesn't retry.
+      if (error.code === "TIMEOUT") {
+        void queryClient.invalidateQueries({ queryKey: queryKeys.account });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.transactions.all });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.recipients.recent });
+      }
     },
   });
 };
@@ -116,10 +136,9 @@ export const useConfirmTransfer = ({ onSuccess }: { onSuccess: (receipt: Transfe
       });
       haptics.success();
       onSuccess(receipt);
-    } catch {
+    } catch (error) {
       haptics.error();
-      setPhase({ name: "idle" });
-      setNotice("Your transfer wasn't completed. Please try again.");
+      setPhase({ name: "failed", error: describeTransferError(error) });
     }
   };
 
@@ -179,6 +198,10 @@ export const useConfirmTransfer = ({ onSuccess }: { onSuccess: (receipt: Transfe
     setNotice("Transfer not sent — PIN entry was cancelled.");
   };
 
+  const clearError = () => {
+    setPhase({ name: "idle" });
+  };
+
   return {
     phase,
     notice,
@@ -189,5 +212,6 @@ export const useConfirmTransfer = ({ onSuccess }: { onSuccess: (receipt: Transfe
     confirmWithPin,
     switchToPin,
     dismissPin,
+    clearError,
   };
 };

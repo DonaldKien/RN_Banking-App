@@ -15,12 +15,20 @@ import { useAccount } from "@/features/account/queries";
 import { PinSheet } from "@/features/auth/pin-sheet";
 import { describeRecipient } from "@/features/recipients/recipient-row";
 import { ProcessingOverlay } from "@/features/transfer/processing-overlay";
+import type { TransferErrorAction } from "@/features/transfer/transfer-errors";
 import { selectAmountSen, selectNote, selectRecipient } from "@/features/transfer/transfer-slice";
 import { useConfirmTransfer } from "@/features/transfer/use-confirm-transfer";
 import { useTheme } from "@/hooks/use-theme";
 import { maskAccountNumber } from "@/lib/format";
 import { formatMoney } from "@/lib/money";
 import { useAppSelector } from "@/store";
+
+const ERROR_ACTION_LABEL: Record<TransferErrorAction, string> = {
+  retry: "Try again",
+  edit_amount: "Edit amount",
+  change_recipient: "Change recipient",
+  reauthenticate: "Approve again",
+};
 
 /** Step 2: confirm details, authenticate, submit. */
 const ReviewTransferScreen = () => {
@@ -45,6 +53,16 @@ const ReviewTransferScreen = () => {
   if (!recipient || amount === null) return <Redirect href="/transfer" />;
 
   const { phase, capability } = flow;
+
+  const handleErrorAction = (action: TransferErrorAction) => {
+    if (action === "retry" || action === "reauthenticate") {
+      void flow.confirm();
+    } else {
+      // Editing goes back to the form; the edit invalidates the idempotency key.
+      flow.clearError();
+      router.back();
+    }
+  };
 
   const confirmLabel = capability ? `Confirm with ${capability.label}` : "Confirm";
 
@@ -82,6 +100,15 @@ const ReviewTransferScreen = () => {
           </ThemedText>
         </View>
 
+        {phase.name === "failed" && (
+          <Banner
+            tone="danger"
+            title={phase.error.title}
+            message={phase.error.message}
+            actionLabel={ERROR_ACTION_LABEL[phase.error.action]}
+            onAction={() => handleErrorAction(phase.error.action)}
+          />
+        )}
         {flow.notice && phase.name === "idle" && <Banner tone="warning" message={flow.notice} />}
 
         <Card>
