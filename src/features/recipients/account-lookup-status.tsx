@@ -3,9 +3,38 @@ import Animated, { FadeIn } from "react-native-reanimated";
 
 import { ThemedText } from "@/components/themed-text";
 import { Avatar } from "@/components/ui/avatar";
+import { Banner } from "@/components/ui/banner";
 import { Card } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
 import { useTheme } from "@/hooks/use-theme";
+import { isApiError } from "@/services/api/errors";
+
+/** Turns a failed name check into the message shown to the user. */
+const describeLookupError = (
+  error: unknown,
+): { title: string; message: string; canRetry: boolean } => {
+  if (isApiError(error) && error.code === "ACCOUNT_NOT_FOUND") {
+    return {
+      title: "Account not found",
+      message: "Double-check the number and the bank you selected.",
+      canRetry: false,
+    };
+  }
+
+  if (isApiError(error)) {
+    return {
+      title: "Couldn't verify",
+      message: error.message,
+      canRetry: error.retryable,
+    };
+  }
+
+  return {
+    title: "Couldn't verify",
+    message: "Please try again.",
+    canRetry: true,
+  };
+};
 
 const CheckingIndicator = () => {
   const theme = useTheme();
@@ -39,15 +68,22 @@ const VerifiedAccountHolder = ({ name }: { name: string }) => {
   );
 };
 
-const LookupError = ({ message }: { message: string }) => {
-  const theme = useTheme();
+const LookupErrorBanner = ({
+  error,
+  onRetry,
+}: {
+  error: unknown;
+  onRetry: () => void;
+}) => {
+  const { title, message, canRetry } = describeLookupError(error);
   return (
-    <View style={styles.checking} accessibilityRole="alert">
-      <Icon name="error" size={16} color={theme.danger} />
-      <ThemedText variant="caption" color="danger">
-        {message}
-      </ThemedText>
-    </View>
+    <Banner
+      tone="danger"
+      title={title}
+      message={message}
+      actionLabel={canRetry ? "Try again" : undefined}
+      onAction={onRetry}
+    />
   );
 };
 
@@ -60,14 +96,16 @@ export const AccountLookupStatus = ({
   isChecking,
   verifiedName,
   error,
+  onRetry,
 }: {
   isChecking: boolean;
   verifiedName: string | null;
-  error: string | null;
+  error: unknown;
+  onRetry: () => void;
 }) => {
   if (isChecking) return <CheckingIndicator />;
   if (verifiedName) return <VerifiedAccountHolder name={verifiedName} />;
-  if (error) return <LookupError message={error} />;
+  if (error) return <LookupErrorBanner error={error} onRetry={onRetry} />;
   return null;
 };
 
