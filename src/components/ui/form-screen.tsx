@@ -16,7 +16,9 @@ export const FormScreen = ({ children, footer }: { children: ReactNode; footer?:
   return (
     <KeyboardAvoidingView
       style={[styles.flex, { backgroundColor: theme.background }]}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}>
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      // Offset by the native header (status bar + 44pt nav bar) above this view.
+      keyboardVerticalOffset={Platform.OS === "ios" ? insets.top + 44 : 0}>
       <ScrollView
         style={styles.flex}
         contentContainerStyle={styles.content}

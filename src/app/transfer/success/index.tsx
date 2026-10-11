@@ -35,9 +35,13 @@ const TransferSuccessScreen = () => {
   const { data: balance } = useBalance();
   const balanceHidden = useAppSelector(selectBalanceHidden);
 
-  // The draft has been sent.
+  // The draft has been sent; clear it once the receipt is dismissed. Clearing
+  // on unmount (not mount) means the review screen, still animating out
+  // underneath, never sees an empty draft.
   useEffect(() => {
-    dispatch(draftCleared());
+    return () => {
+      dispatch(draftCleared());
+    };
   }, [dispatch]);
 
   // Android back from a receipt returns home rather than to the spent form.

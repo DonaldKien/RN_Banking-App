@@ -153,7 +153,8 @@ export const SearchableDropdown = <T extends string>({
             styles.sheet,
             {
               backgroundColor: theme.background,
-              paddingTop: 16,
+              // iOS page sheets sit below the status bar; Android full-screen modals don't.
+              paddingTop: Platform.OS === "ios" ? 16 : insets.top + 16,
             },
           ]}>
           <View style={styles.sheetHeader}>
