@@ -1,5 +1,6 @@
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 
+import { AppPressable } from "@/components/ui/app-pressable";
 import { ThemedText } from "@/components/themed-text";
 import { Avatar } from "@/components/ui/avatar";
 import { Icon } from "@/components/ui/icon";
@@ -36,7 +37,7 @@ export const QuickSend = ({
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={styles.content}
       accessibilityLabel="Quick send">
-      <Pressable
+      <AppPressable
         accessibilityRole="button"
         accessibilityLabel="New transfer"
         onPress={onNew}
@@ -47,7 +48,7 @@ export const QuickSend = ({
         <ThemedText variant="caption" numberOfLines={1} align="center">
           New
         </ThemedText>
-      </Pressable>
+      </AppPressable>
 
       {!recipients
         ? Array.from({ length: 4 }, (_, i) => (
@@ -57,7 +58,7 @@ export const QuickSend = ({
             </View>
           ))
         : recipients.map((recipient) => (
-            <Pressable
+            <AppPressable
               key={recipient.id}
               accessibilityRole="button"
               accessibilityLabel={`Send to ${recipient.name}`}
@@ -67,7 +68,7 @@ export const QuickSend = ({
               <ThemedText variant="caption" numberOfLines={1} align="center">
                 {recipient.name.split(" ")[0]}
               </ThemedText>
-            </Pressable>
+            </AppPressable>
           ))}
     </ScrollView>
   );

@@ -1,6 +1,7 @@
 import { memo } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
+import { AppPressable } from "@/components/ui/app-pressable";
 import { ThemedText } from "@/components/themed-text";
 import { Avatar } from "@/components/ui/avatar";
 import { Icon } from "@/components/ui/icon";
@@ -33,7 +34,7 @@ export const RecipientRow = memo(({
   const detail = subtitle ?? describeRecipient(recipient);
 
   return (
-    <Pressable
+    <AppPressable
       accessibilityRole="button"
       accessibilityLabel={`${recipient.name}, ${detail}`}
       accessibilityState={{ disabled }}
@@ -53,7 +54,7 @@ export const RecipientRow = memo(({
         </ThemedText>
       </View>
       {!disabled && <Icon name="chevronRight" size={16} color={theme.textTertiary} />}
-    </Pressable>
+    </AppPressable>
   );
 });
 RecipientRow.displayName = "RecipientRow";

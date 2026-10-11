@@ -1,8 +1,10 @@
-import { ActivityIndicator, Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
+import { ActivityIndicator, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 
+import { AppPressable } from "@/components/ui/app-pressable";
 import { ThemedText } from "@/components/themed-text";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { Radius } from "@/constants/theme";
+import type { ThrottleOption } from "@/hooks/use-throttled-press";
 import { useTheme } from "@/hooks/use-theme";
 import { haptics as hapticFeedback } from "@/lib/haptics";
 
@@ -21,6 +23,12 @@ export interface ButtonProps {
   testID?: string;
   /** Play a light "tick" when pressed. Defaults to `true`. */
   haptics?: boolean;
+  /**
+   * Ignore repeat taps after a press. Turn it on for buttons that send a POST
+   * request, so a double tap can't send it twice. `true` = 250 ms, a number =
+   * that many ms. Defaults to `false`.
+   */
+  throttle?: ThrottleOption;
 }
 
 export const Button = ({
@@ -35,9 +43,15 @@ export const Button = ({
   accessibilityHint,
   testID,
   haptics = true,
+  throttle = false,
 }: ButtonProps) => {
   const theme = useTheme();
   const inactive = disabled || loading;
+
+  const handlePress = () => {
+    if (haptics) hapticFeedback.selection();
+    onPress();
+  };
 
   const palette = {
     primary: { bg: theme.primary, pressed: theme.primaryPressed, fg: theme.onPrimary },
@@ -47,17 +61,15 @@ export const Button = ({
   }[variant];
 
   return (
-    <Pressable
+    <AppPressable
       testID={testID}
       accessibilityRole="button"
       accessibilityLabel={title}
       accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled: inactive, busy: loading }}
       disabled={inactive}
-      onPress={() => {
-        if (haptics) hapticFeedback.selection();
-        onPress();
-      }}
+      throttle={throttle}
+      onPress={handlePress}
       style={({ pressed }) => [
         styles.base,
         size === "sm" && styles.small,
@@ -76,7 +88,7 @@ export const Button = ({
           </ThemedText>
         </View>
       )}
-    </Pressable>
+    </AppPressable>
   );
 };
 

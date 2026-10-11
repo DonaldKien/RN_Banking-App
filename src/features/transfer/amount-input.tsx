@@ -1,6 +1,7 @@
 import { useRef } from "react";
-import { Pressable, StyleSheet, TextInput, View } from "react-native";
+import { StyleSheet, TextInput, View } from "react-native";
 
+import { AppPressable } from "@/components/ui/app-pressable";
 import { ThemedText } from "@/components/themed-text";
 import { Card } from "@/components/ui/card";
 import { Fonts, Radius } from "@/constants/theme";
@@ -45,7 +46,7 @@ export const AmountInput = ({
         Amount
       </ThemedText>
 
-      <Pressable style={styles.inputRow} onPress={() => inputRef.current?.focus()} accessible={false}>
+      <AppPressable style={styles.inputRow} onPress={() => inputRef.current?.focus()} accessible={false}>
         <ThemedText variant="title" color={value ? "text" : "textTertiary"} style={styles.currency}>
           {CURRENCY_SYMBOL}
         </ThemedText>
@@ -63,7 +64,7 @@ export const AmountInput = ({
           accessibilityHint={helper}
           style={[styles.input, { color: error ? theme.danger : theme.text }]}
         />
-      </Pressable>
+      </AppPressable>
 
       <ThemedText
         variant="caption"
@@ -77,7 +78,7 @@ export const AmountInput = ({
           const selected = amount === quick;
           const unaffordable = balance !== undefined && quick > balance;
           return (
-            <Pressable
+            <AppPressable
               key={quick}
               accessibilityRole="button"
               accessibilityLabel={`Set amount to ${formatMoney(quick)}`}
@@ -95,7 +96,7 @@ export const AmountInput = ({
               <ThemedText variant="captionStrong" style={{ color: selected ? theme.onPrimary : theme.text }}>
                 {formatMoney(quick).replace(".00", "")}
               </ThemedText>
-            </Pressable>
+            </AppPressable>
           );
         })}
       </View>

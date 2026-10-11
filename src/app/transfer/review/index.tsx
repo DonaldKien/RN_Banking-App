@@ -75,6 +75,8 @@ const ReviewTransferScreen = () => {
           <View style={styles.footer}>
             <Button
               testID="confirm-transfer"
+              // Sends POST /v1/transfers: ignore double taps.
+              throttle
               title={phase.name === "authenticating" ? `Waiting for ${capability?.label ?? "approval"}…` : confirmLabel}
               icon={capability?.icon ?? "lock"}
               onPress={() => void flow.confirm()}
@@ -107,6 +109,8 @@ const ReviewTransferScreen = () => {
             message={phase.error.message}
             actionLabel={ERROR_ACTION_LABEL[phase.error.action]}
             onAction={() => handleErrorAction(phase.error.action)}
+            // "Try again" / "Approve again" re-sends POST /v1/transfers.
+            throttleAction
           />
         )}
         {flow.notice && phase.name === "idle" && <Banner tone="warning" message={flow.notice} />}

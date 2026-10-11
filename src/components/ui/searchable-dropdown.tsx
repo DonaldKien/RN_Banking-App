@@ -1,8 +1,9 @@
 import { FlashList } from "@shopify/flash-list";
 import { useMemo, useState } from "react";
-import { Modal, Platform, Pressable, StyleSheet, View } from "react-native";
+import { Modal, Platform, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { AppPressable } from "@/components/ui/app-pressable";
 import { ThemedText } from "@/components/themed-text";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Icon, type IconName } from "@/components/ui/icon";
@@ -111,7 +112,7 @@ export const SearchableDropdown = <T extends string>({
       </ThemedText>
 
       {/* The closed field */}
-      <Pressable
+      <AppPressable
         testID={testID}
         accessibilityRole="button"
         accessibilityLabel={`${label}: ${selectedOption ? selectedOption.label : placeholder}`}
@@ -133,7 +134,7 @@ export const SearchableDropdown = <T extends string>({
           {selectedOption ? selectedOption.label : placeholder}
         </ThemedText>
         <Icon name="chevronDown" size={18} color={theme.textSecondary} />
-      </Pressable>
+      </AppPressable>
 
       {(error || helper) && (
         <ThemedText variant="caption" color={error ? "danger" : "textSecondary"}>
@@ -185,7 +186,7 @@ export const SearchableDropdown = <T extends string>({
             renderItem={({ item }) => {
               const selected = item.value === value;
               return (
-                <Pressable
+                <AppPressable
                   accessibilityRole="button"
                   accessibilityState={{ selected }}
                   accessibilityLabel={item.description ? `${item.label}, ${item.description}` : item.label}
@@ -202,7 +203,7 @@ export const SearchableDropdown = <T extends string>({
                     )}
                   </View>
                   {selected && <Icon name="check" size={20} color={theme.primary} />}
-                </Pressable>
+                </AppPressable>
               );
             }}
           />

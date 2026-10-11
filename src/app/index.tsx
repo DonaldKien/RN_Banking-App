@@ -1,9 +1,10 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useState } from "react";
-import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
+import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { AppPressable } from "@/components/ui/app-pressable";
 import { ThemedText } from "@/components/themed-text";
 import { Avatar } from "@/components/ui/avatar";
 import { Banner } from "@/components/ui/banner";
@@ -104,11 +105,11 @@ const HomeScreen = () => {
         <View style={[styles.section, styles.padded]}>
           <View style={styles.sectionHeader}>
             <ThemedText variant="heading">Recent activity</ThemedText>
-            <Pressable accessibilityRole="link" hitSlop={8} onPress={() => router.push("/history")}>
+            <AppPressable accessibilityRole="link" hitSlop={8} onPress={() => router.push("/history")}>
               <ThemedText variant="captionStrong" color="primary">
                 See all
               </ThemedText>
-            </Pressable>
+            </AppPressable>
           </View>
 
           {/* Show the error only when there is nothing cached to display. */}

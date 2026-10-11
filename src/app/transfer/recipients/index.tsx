@@ -1,7 +1,8 @@
 import { router } from "expo-router";
 import { useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
+import { AppPressable } from "@/components/ui/app-pressable";
 import { ThemedText } from "@/components/themed-text";
 import { Icon } from "@/components/ui/icon";
 import { Tabs } from "@/components/ui/tabs";
@@ -60,7 +61,7 @@ const RecipientPickerScreen = () => {
           leading={<Icon name="search" size={18} color={theme.textTertiary} />}
         />
         <Tabs options={SOURCES} value={source} onChange={setSource} />
-        <Pressable
+        <AppPressable
           accessibilityRole="button"
           accessibilityLabel="Pay a new account or mobile number"
           onPress={() => router.push("/transfer/new-recipient")}
@@ -84,7 +85,7 @@ const RecipientPickerScreen = () => {
             </ThemedText>
           </View>
           <Icon name="chevronRight" size={16} color={theme.textTertiary} />
-        </Pressable>
+        </AppPressable>
       </View>
 
       {source === "saved" ? (

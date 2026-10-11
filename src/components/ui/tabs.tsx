@@ -1,5 +1,6 @@
-import { Pressable, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
+import { AppPressable } from "@/components/ui/app-pressable";
 import { ThemedText } from "@/components/themed-text";
 import { Radius } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
@@ -38,7 +39,7 @@ export const Tabs = <T extends string>({ options, value, onChange, haptics = tru
       {options.map((option) => {
         const selected = option.value === value;
         return (
-          <Pressable
+          <AppPressable
             key={option.value}
             accessibilityRole="tab"
             accessibilityState={{ selected }}
@@ -47,7 +48,7 @@ export const Tabs = <T extends string>({ options, value, onChange, haptics = tru
             <ThemedText variant="captionStrong" color={selected ? "text" : "textSecondary"}>
               {option.label}
             </ThemedText>
-          </Pressable>
+          </AppPressable>
         );
       })}
     </View>

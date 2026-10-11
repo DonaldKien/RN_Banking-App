@@ -1,5 +1,6 @@
-import { Pressable, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
+import { AppPressable } from "@/components/ui/app-pressable";
 import { ThemedText } from "@/components/themed-text";
 import { Avatar } from "@/components/ui/avatar";
 import { Icon } from "@/components/ui/icon";
@@ -25,7 +26,7 @@ export const RecipientField = ({
       <ThemedText variant="captionStrong" color="textSecondary">
         To
       </ThemedText>
-      <Pressable
+      <AppPressable
         testID="recipient-field"
         accessibilityRole="button"
         accessibilityLabel={recipient ? `Recipient ${recipient.name}. Change recipient` : "Choose recipient"}
@@ -67,7 +68,7 @@ export const RecipientField = ({
             <Icon name="chevronRight" size={16} color={theme.textTertiary} />
           </>
         )}
-      </Pressable>
+      </AppPressable>
       {error && (
         <ThemedText variant="caption" color="danger">
           {error}

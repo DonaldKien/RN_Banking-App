@@ -3,7 +3,7 @@
  * unavailable, locked out, declined via "Use PIN", or on web.
  */
 import { useState } from "react";
-import { Modal, Pressable, StyleSheet, View } from "react-native";
+import { Modal, StyleSheet, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -12,6 +12,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { AppPressable } from "@/components/ui/app-pressable";
 import { ThemedText } from "@/components/themed-text";
 import { Icon } from "@/components/ui/icon";
 import { Radius } from "@/constants/theme";
@@ -113,7 +114,7 @@ export const PinSheet = ({
             <View style={[styles.lockIcon, { backgroundColor: theme.primarySoft }]}>
               <Icon name="lock" size={22} color={theme.primary} />
             </View>
-            <Pressable
+            <AppPressable
               accessibilityRole="button"
               accessibilityLabel="Cancel"
               hitSlop={12}
@@ -122,7 +123,7 @@ export const PinSheet = ({
                 onCancel();
               }}>
               <Icon name="close" size={22} color={theme.textSecondary} />
-            </Pressable>
+            </AppPressable>
           </View>
 
           <ThemedText variant="title">Enter transaction PIN</ThemedText>
@@ -159,7 +160,7 @@ export const PinSheet = ({
               key === "" ? (
                 <View key={index} style={styles.key} />
               ) : (
-                <Pressable
+                <AppPressable
                   key={index}
                   accessibilityRole="button"
                   accessibilityLabel={key === "back" ? "Delete" : key}
@@ -175,7 +176,7 @@ export const PinSheet = ({
                   ) : (
                     <ThemedText variant="title">{key}</ThemedText>
                   )}
-                </Pressable>
+                </AppPressable>
               ),
             )}
           </View>

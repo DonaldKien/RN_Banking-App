@@ -1,6 +1,7 @@
 import { memo } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
+import { AppPressable } from "@/components/ui/app-pressable";
 import { ThemedText } from "@/components/themed-text";
 import { Icon } from "@/components/ui/icon";
 import { Radius } from "@/constants/theme";
@@ -27,7 +28,7 @@ export const TransactionRow = memo(({
     : formatTime(transaction.createdAt);
 
   return (
-    <Pressable
+    <AppPressable
       accessibilityRole="button"
       accessibilityLabel={`${isCredit ? "Received from" : "Sent to"} ${transaction.counterparty.name}, ${amountLabel}, ${subtitle}`}
       onPress={() => onPress(transaction)}
@@ -50,7 +51,7 @@ export const TransactionRow = memo(({
       <ThemedText variant="bodyStrong" color={isCredit ? "success" : "text"} style={styles.amount}>
         {amountLabel}
       </ThemedText>
-    </Pressable>
+    </AppPressable>
   );
 });
 TransactionRow.displayName = "TransactionRow";

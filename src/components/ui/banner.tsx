@@ -5,6 +5,7 @@ import { ThemedText } from "@/components/themed-text";
 import { Button } from "@/components/ui/button";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { Radius } from "@/constants/theme";
+import type { ThrottleOption } from "@/hooks/use-throttled-press";
 import { useTheme } from "@/hooks/use-theme";
 
 type BannerTone = "danger" | "warning" | "info" | "success";
@@ -17,6 +18,7 @@ export const Banner = ({
   icon,
   actionLabel,
   onAction,
+  throttleAction = false,
 }: {
   tone: BannerTone;
   title?: string;
@@ -24,6 +26,8 @@ export const Banner = ({
   icon?: IconName;
   actionLabel?: string;
   onAction?: () => void;
+  /** Throttle the action button when it sends a POST request (e.g. retrying a transfer). `true` = 250 ms, a number = that many ms. */
+  throttleAction?: ThrottleOption;
 }) => {
   const theme = useTheme();
   const colors = {
@@ -51,7 +55,14 @@ export const Banner = ({
           {message}
         </ThemedText>
         {actionLabel && onAction && (
-          <Button title={actionLabel} onPress={onAction} size="sm" variant="ghost" style={styles.action} />
+          <Button
+            title={actionLabel}
+            onPress={onAction}
+            size="sm"
+            variant="ghost"
+            throttle={throttleAction}
+            style={styles.action}
+          />
         )}
       </View>
     </Animated.View>

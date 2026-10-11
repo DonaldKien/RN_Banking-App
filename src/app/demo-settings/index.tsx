@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Pressable, StyleSheet, Switch, View } from "react-native";
+import { StyleSheet, Switch, View } from "react-native";
 
+import { AppPressable } from "@/components/ui/app-pressable";
 import { ThemedText } from "@/components/themed-text";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -50,7 +51,7 @@ const DemoSettingsScreen = () => {
           {SCENARIOS.map((scenario) => {
             const selected = transferScenario === scenario.value;
             return (
-              <Pressable
+              <AppPressable
                 key={scenario.value}
                 accessibilityRole="radio"
                 accessibilityState={{ selected }}
@@ -68,7 +69,7 @@ const DemoSettingsScreen = () => {
                     {scenario.description}
                   </ThemedText>
                 </View>
-              </Pressable>
+              </AppPressable>
             );
           })}
         </Card>
