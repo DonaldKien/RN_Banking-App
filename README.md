@@ -6,7 +6,7 @@ Users pick a recipient (saved payees, phone contacts via DuitNow, or a new accou
 
 ## Demo video
 
-> 📹 _Demo video link goes here._
+[> 📹 _Demo video link goes here._](https://github.com/user-attachments/assets/476064d6-cf41-4a62-870a-2d45e6b47f33)
 
 ---
 
